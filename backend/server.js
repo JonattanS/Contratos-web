@@ -18,9 +18,11 @@ app.use('/api/usr-modules', usrModulesRouter);
 const consultaDocumentosRouter = require('./routes/consultadocumentos');
 app.use('/api', consultaDocumentosRouter);
 
-// Importar y conectar la nueva ruta
 const comunicadoRouter = require('./routes/Comunicado');
 app.use('/api', comunicadoRouter);
+
+const cotizacionesRouter = require('./routes/Cotizaciones');
+app.use('/api', cotizacionesRouter);
 
 // Endpoint para ejecutar queries con configuración dinámica (pool temporal)
 

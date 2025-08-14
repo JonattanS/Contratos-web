@@ -27,6 +27,24 @@ export const Dashboard = () => {
       console.error(err);
       alert('Fallo la ejecución del comunicado');
     }
+  }; 
+  
+  // Función para ejecutar el script python vía backend
+  const handleGenerarCotizacion = async () => {
+    try {
+      const res = await fetch('http://localhost:3002/api/ejecutar-cotizacion', {
+        method: 'POST'
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`Cotizacion generada:\n${data.output}`);
+      } else {
+        alert(`Error:\n${data.error || 'Ocurrió un problema'}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Fallo la ejecución de la cotizacion');
+    }
   };
 
   const services = [
@@ -43,7 +61,7 @@ export const Dashboard = () => {
       description: "Elabora cotizaciones profesionales con cálculos automáticos, términos y condiciones personalizables.",
       icon: Calculator,
       variant: "secondary" as const,
-      onClick: () => setActiveView("quotes")
+      onClick: handleGenerarCotizacion
     },
     {
       title: "Notificaciones Automatizadas",

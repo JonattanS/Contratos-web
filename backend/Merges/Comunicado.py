@@ -3,12 +3,16 @@ from docx import Document
 import os
 from datetime import datetime
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+#BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+#EXCEL_PATH = "clientes.xlsx"  
+#OUTPUT_DIR = "cartas_generadas"
 
 # Rutas
-EXCEL_PATH = "clientes.xlsx"  
+ONEDRIVE_PATH = r"C:\Users\MCAÑAS\OneDrive - Nova Corp SAS"
+EXCEL_PATH = os.path.join(ONEDRIVE_PATH, "Documentos", "clientes.xlsx")
 TEMPLATE_PATH = "RENOVACION_202X_CLIENTE.docx"
-OUTPUT_DIR = "cartas_generadas"
+
+OUTPUT_DIR = os.path.join(ONEDRIVE_PATH, "Documentos_Generados", "Comunicados")
 
 # Crear carpeta de salida si no existe
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -42,19 +46,32 @@ def reemplazar_etiquetas(doc, datos):
     # Combinar datos de fecha con datos del Excel
     todos_datos = {**datos_fecha, **datos}
     
-    for p in doc.paragraphs:
-        texto_original = p.text
-        texto_nuevo = texto_original
-        
-        for key, value in todos_datos.items():
-            etiqueta_angular = f"<{key}>"
-            etiqueta_guillemet = f"« {key}»"
-            texto_nuevo = texto_nuevo.replace(etiqueta_angular, str(value))
-            texto_nuevo = texto_nuevo.replace(etiqueta_guillemet, str(value))
-        
-        if texto_nuevo != texto_original:
-            p.clear()
-            p.add_run(texto_nuevo)
+    def reemplazar_en_parrafos(parrafos):
+        for p in parrafos:
+            texto_completo = p.text
+            for key, value in todos_datos.items():
+                etiqueta_angular = f"<{key}>"
+                etiqueta_guillemet = f"« {key}»"
+                
+                if etiqueta_angular in texto_completo or etiqueta_guillemet in texto_completo:
+                    # Reemplazar en el texto completo del párrafo
+                    nuevo_texto = texto_completo.replace(etiqueta_angular, str(value))
+                    nuevo_texto = nuevo_texto.replace(etiqueta_guillemet, str(value))
+                    
+                    # Si hubo cambios, limpiar el párrafo y agregar el nuevo texto
+                    if nuevo_texto != texto_completo:
+                        p.clear()
+                        p.add_run(nuevo_texto)
+                        texto_completo = nuevo_texto
+    
+    # Reemplazar en párrafos principales
+    reemplazar_en_parrafos(doc.paragraphs)
+    
+    # Reemplazar en tablas
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                reemplazar_en_parrafos(cell.paragraphs)
 
 # Generar un documento por cada fila del Excel
 for idx, row in df.iterrows():
@@ -72,4 +89,4 @@ for idx, row in df.iterrows():
     # Guardar documento en la carpeta del cliente
     nombre_archivo = os.path.join(cliente_dir, f"Comunicado_"+str(datetime.now().year)+"_"+nit+".docx")
     doc.save(nombre_archivo)
-    print(f"[OK] Documento generado: {nombre_archivo}")
+    print(f"[ok] Documento generado: {nombre_archivo}")
