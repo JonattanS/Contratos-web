@@ -2,17 +2,23 @@ import pandas as pd
 from docx import Document
 import os
 from datetime import datetime
+from dotenv import load_dotenv
+import tempfile
+from onedrive_uploader import OneDriveUploader
+import msal
+import requests
 
-#BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-#EXCEL_PATH = "clientes.xlsx"  
-#OUTPUT_DIR = "cartas_generadas"
+# Cargar variables de entorno
+load_dotenv()
 
 # Rutas
 ONEDRIVE_PATH = r"C:\Users\MCAÑAS\OneDrive - Nova Corp SAS"
 EXCEL_PATH = os.path.join(ONEDRIVE_PATH, "Documentos", "clientes.xlsx")
 TEMPLATE_PATH = "RENOVACION_202X_CLIENTE.docx"
 
-OUTPUT_DIR = os.path.join(ONEDRIVE_PATH, "Documentos_Generados", "Comunicados")
+# Configuración OneDrive externo (cambiar por la ruta compartida)
+EXTERNAL_ONEDRIVE = os.environ.get('EXTERNAL_ONEDRIVE_PATH', ONEDRIVE_PATH)
+OUTPUT_DIR = os.path.join(EXTERNAL_ONEDRIVE, "Documentos_Generados", "Comunicados")
 
 # Crear carpeta de salida si no existe
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -46,6 +52,7 @@ def reemplazar_etiquetas(doc, datos):
     # Combinar datos de fecha con datos del Excel
     todos_datos = {**datos_fecha, **datos}
     
+    # Función auxiliar para reemplazar en párrafos
     def reemplazar_en_parrafos(parrafos):
         for p in parrafos:
             texto_completo = p.text
@@ -73,6 +80,35 @@ def reemplazar_etiquetas(doc, datos):
             for cell in row.cells:
                 reemplazar_en_parrafos(cell.paragraphs)
 
+def get_access_token():
+    """Obtener token de acceso usando MSAL"""
+    try:
+        client_id = os.environ.get('AZURE_CLIENT_ID')
+        client_secret = os.environ.get('AZURE_CLIENT_SECRET')
+        tenant_id = os.environ.get('AZURE_TENANT_ID')
+        
+        if not all([client_id, client_secret, tenant_id]):
+            print(" Faltan credenciales de Azure en .env")
+            return None
+            
+        app = msal.ConfidentialClientApplication(
+            client_id,
+            authority=f"https://login.microsoftonline.com/{tenant_id}",
+            client_credential=client_secret
+        )
+        
+        result = app.acquire_token_for_client(scopes=["https://graph.microsoft.com/.default"])
+        
+        if "access_token" in result:
+            return result["access_token"]
+        else:
+            print(f" Error obteniendo token: {result.get('error_description')}")
+            return None
+            
+    except Exception as e:
+        print(f" Error: {str(e)}")
+        return None
+
 # Generar un documento por cada fila del Excel
 for idx, row in df.iterrows():
     # Obtener NIT (primera columna)
@@ -86,7 +122,23 @@ for idx, row in df.iterrows():
     doc = Document(TEMPLATE_PATH)
     reemplazar_etiquetas(doc, row.to_dict())
 
-    # Guardar documento en la carpeta del cliente
-    nombre_archivo = os.path.join(cliente_dir, f"Comunicado_"+str(datetime.now().year)+"_"+nit+".docx")
-    doc.save(nombre_archivo)
-    print(f"[ok] Documento generado: {nombre_archivo}")
+    # Guardar documento
+    nombre_archivo = f"Comunicado_{datetime.now().year}_{nit}.docx"
+    
+    if os.environ.get('UPLOAD_TO_EXTERNAL', 'false').lower() == 'true':
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.docx') as temp_file:
+            doc.save(temp_file.name)
+
+            # Obtener token y subir
+            access_token = get_access_token()
+            if access_token:
+                uploader = OneDriveUploader(access_token, user_upn="mcanas@novacorp20.onmicrosoft.com")
+                folder_path = f"Documentos_Generados/Comunicados/{nit}"
+                uploader.create_folder(folder_path)
+                uploader.upload_file(temp_file.name, folder_path, nombre_archivo)
+
+            os.unlink(temp_file.name)
+    else:
+        local_path = os.path.join(cliente_dir, nombre_archivo)
+        doc.save(local_path)
+        print(f" Documento generado: {local_path}")
