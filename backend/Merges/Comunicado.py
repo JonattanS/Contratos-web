@@ -24,7 +24,7 @@ OUTPUT_DIR = os.path.join(EXTERNAL_ONEDRIVE, "Documentos_Generados", "Comunicado
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # Cargar Excel
-df = pd.read_excel(EXCEL_PATH)
+df = pd.read_excel(EXCEL_PATH, engine='openpyxl')
 
 # Leer plantilla Word
 with open(TEMPLATE_PATH, 'rb') as file:

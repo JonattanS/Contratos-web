@@ -22,7 +22,7 @@ OUTPUT_DIR = os.path.join(ONEDRIVE_PATH, "Documentos_Generados", "Renovaciones")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # Cargar Excel
-df = pd.read_excel(EXCEL_PATH)
+df = pd.read_excel(EXCEL_PATH, engine='openpyxl')
 
 # Función para reemplazar etiquetas en párrafos y tablas
 def reemplazar_etiquetas(doc, datos):
