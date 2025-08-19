@@ -14,7 +14,7 @@ export const Dashboard = () => {
   // Función para ejecutar el script python vía backend
   const handleGenerarComunicado = async () => {
     try {
-      const res = await fetch('http://localhost:3002/api/ejecutar-comunicado', {
+      const res = await fetch('http://10.11.11.246:3002/routes/ejecutar-comunicado', {
         method: 'POST'
       });
       const data = await res.json();
@@ -32,7 +32,7 @@ export const Dashboard = () => {
   // Función para ejecutar el script python vía backend
   const handleGenerarCotizacion = async () => {
     try {
-      const res = await fetch('http://localhost:3002/api/ejecutar-cotizacion', {
+      const res = await fetch('http://10.11.11.246:3002/api/ejecutar-cotizacion', {
         method: 'POST'
       });
       const data = await res.json();

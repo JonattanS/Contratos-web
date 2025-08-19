@@ -11,7 +11,7 @@ router.post('/ejecutar-comunicado', (req, res) => {
 
     try {
         // Ejecutar el script usando Python y asegurar cwd en Merges
-        const proceso = spawn('python', [scriptPath], { cwd: mergesPath });
+        const proceso = spawn('python3', [scriptPath], { cwd: mergesPath });
 
         let output = '';
         let errorOutput = '';
