@@ -23,10 +23,6 @@ export const UserMenu = () => {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <Settings className="h-4 w-4 mr-2" /> Configuración
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={logout}>
           <LogOut className="h-4 w-4 mr-2" /> Cerrar sesión
         </DropdownMenuItem>

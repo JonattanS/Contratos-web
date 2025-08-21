@@ -49,12 +49,12 @@ export const NotificationForm = ({ onBack }: NotificationFormProps) => {
   const handleExecuteQuery = () => {
     // Aquí se integraría con la funcionalidad existente de Amazon QA
     toast({
-      title: "Consulta enviada a Amazon QA",
+      title: "Consulta enviada a Notinova",
       description: "Las notificaciones se procesarán según la configuración.",
     });
 
     // Simulación de llamada a API externa
-    console.log("Ejecutando query Amazon QA:", queryData);
+    console.log("Ejecutando Notinova", queryData);
   };
 
   const getStatusBadge = (status: string) => {

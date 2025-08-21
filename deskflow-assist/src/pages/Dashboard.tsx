@@ -50,7 +50,7 @@ export const Dashboard = () => {
   const services = [
     {
       title: "Generar Comunicados",
-      description: "Crea documentos oficiales, memorándums, circulares y notificaciones empresariales con formato estándar.",
+      description: "Crea documentos oficiales empresariales con formato estándar para el contrato.",
       icon: FileText,
       variant: "primary" as const,
       // Aquí se llama al handler que ejecuta el script, no cambia la vista
@@ -58,14 +58,14 @@ export const Dashboard = () => {
     },
     {
       title: "Generar Cotizaciones",
-      description: "Elabora cotizaciones profesionales con cálculos automáticos, términos y condiciones personalizables.",
+      description: "Elabora cotizaciones profesionales, términos y condiciones personalizables dependiendo de la informacion que este en el formato.",
       icon: Calculator,
       variant: "secondary" as const,
       onClick: handleGenerarCotizacion
     },
     {
       title: "Notificaciones Automatizadas",
-      description: "Accede al sistema de notificaciones integrado con Amazon QA para automatizar alertas y recordatorios.",
+      description: "Accede al sistema de notificaciones integrado con NotiNova para automatizar alertas.",
       icon: Bell,
       variant: "accent" as const,
       onClick: () => setActiveView("notifications")
@@ -118,8 +118,7 @@ export const Dashboard = () => {
                   <h3 className="font-medium mb-2">Integraciones Disponibles</h3>
                   <ul className="text-sm text-muted-foreground space-y-1">
                     <li>• NotiNova (Sistema de notificaciones)</li>
-                    <li>• APIs REST para servicios externos</li>
-                    <li>• Módulos Python independientes</li>
+                    <li>• APIs REST para servicios, funcionalidades Python</li>
                   </ul>
                 </div>
               </div>

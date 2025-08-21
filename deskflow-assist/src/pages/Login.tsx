@@ -57,7 +57,7 @@ const Login: React.FC<{ onLogin: (token: string) => void }> = ({ onLogin }) => {
             <User className="w-8 h-8 text-white" />
           </div>
           <CardTitle className="text-2xl font-bold text-white">Iniciar sesión</CardTitle>
-          <CardDescription className="text-gray-300">Accede a Nova Financial</CardDescription>
+          <CardDescription className="text-gray-300">Accede a NovaCont</CardDescription>
         </CardHeader>
 
         <CardContent>
@@ -135,16 +135,13 @@ const Login: React.FC<{ onLogin: (token: string) => void }> = ({ onLogin }) => {
             {/* Footer Links */}
             <div className="space-y-3 pt-4">
               <div className="text-center">
-                <button type="button" className="text-gray-300 hover:text-white text-sm underline transition-colors">
+                <button type="button" className="text-gray-300 ">
                   ¿Olvidaste tu contraseña?
                 </button>
               </div>
 
               <div className="text-center text-sm text-gray-400">
-                ¿Nuevo en Nova Financial?{" "}
-                <button type="button" className="text-orange-400 hover:text-orange-300 underline transition-colors">
-                  Solicita acceso
-                </button>
+                Solicita acceso a el area de desarrollo
               </div>
             </div>
           </form>
