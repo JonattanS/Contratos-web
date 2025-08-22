@@ -5,7 +5,6 @@ from datetime import datetime
 from dotenv import load_dotenv
 import tempfile
 from onedrive_uploader import OneDriveUploader
-from sharepoint_downloader import SharePointDownloader
 import msal
 import requests
 import time
