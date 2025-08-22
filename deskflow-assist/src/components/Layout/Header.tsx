@@ -16,7 +16,7 @@ export const Header = () => {
         <div className="flex items-center space-x-4">
           <div>
             <img
-              src="/assets/Logo-NovaCorp-oficial.png"
+              src="/Logo-NovaCorp-oficial.png"
               alt="NovaCorp Logo"
               className="w-20 h-20 object-contain"
             />
