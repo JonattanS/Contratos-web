@@ -43,10 +43,18 @@ class OneDriveUploader:
 
     def create_folder(self, folder_path):
         try:
-            folder_data = {"name": os.path.basename(folder_path), "folder": {}}
-            parent_path = os.path.dirname(folder_path) or ""
-            create_url = f"{self._base_drive_url()}/root:/{parent_path}:/children"
+            folder_name = os.path.basename(folder_path)
+            parent_path = os.path.dirname(folder_path)
+            
+            # Si no hay parent_path, crear en la raíz
+            if not parent_path:
+                create_url = f"{self._base_drive_url()}/root/children"
+            else:
+                create_url = f"{self._base_drive_url()}/root:/{parent_path}:/children"
+            
+            folder_data = {"name": folder_name, "folder": {}}
             r = requests.post(create_url, headers=self.headers, json=folder_data)
+            
             if r.status_code in [200, 201]:
                 print(f" Carpeta creada: {folder_path}")
                 return True

@@ -65,7 +65,7 @@ def download_excel_from_onedrive():
     if not access_token:
         raise ValueError("No se pudo obtener token de acceso de Azure")
     
-    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'servicioalcliente@novacorp20.onmicrosoft.com')
+    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'mcanas@novacorp20.onmicrosoft.com')
     
     # Buscar archivos Excel en la carpeta Documentos_Merge
     search_url = f"https://graph.microsoft.com/v1.0/users/{user_email}/drive/root:/Documentos_Merge:/children"
@@ -210,7 +210,7 @@ for idx, row in df.iterrows():
             access_token = get_access_token()
             if access_token:
                 # 👉 aquí indicas el usuario destino
-                uploader = OneDriveUploader(access_token, user_upn="servicioalcliente@novacorp20.onmicrosoft.com")
+                uploader = OneDriveUploader(access_token, user_upn="mcanas@novacorp20.onmicrosoft.com")
 
                 folder_path = f"Documentos_Generados/Renovaciones/{nit}"
                 uploader.create_folder(folder_path)
