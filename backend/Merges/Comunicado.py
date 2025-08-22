@@ -5,15 +5,17 @@ from datetime import datetime
 from dotenv import load_dotenv
 import tempfile
 from onedrive_uploader import OneDriveUploader
+from sharepoint_downloader import SharePointDownloader
 import msal
 import requests
+import time
 
 # Cargar variables de entorno
 load_dotenv()
 
 # Rutas
 ONEDRIVE_PATH = r"C:\Users\MCAÑAS\OneDrive - Nova Corp SAS"
-EXCEL_PATH = os.path.join(ONEDRIVE_PATH, "Documentos", "clientes.xlsx")
+SHAREPOINT_EXCEL_URL = os.environ.get('SHAREPOINT_EXCEL_URL')
 TEMPLATE_PATH = "RENOVACION_202X_CLIENTE.docx"
 
 # Configuración OneDrive externo (cambiar por la ruta compartida)
@@ -23,8 +25,69 @@ OUTPUT_DIR = os.path.join(EXTERNAL_ONEDRIVE, "Documentos_Generados", "Comunicado
 # Crear carpeta de salida si no existe
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
+# Obtener token para descargar Excel desde SharePoint
+access_token = None
+temp_excel_path = None
+
+def download_excel_from_onedrive():
+    """Descargar Excel desde OneDrive carpeta Documentos_Merge"""
+    global access_token
+    
+    if not access_token:
+        access_token = get_access_token()
+    
+    if not access_token:
+        raise ValueError("No se pudo obtener token de acceso de Azure")
+    
+    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'servicioalcliente@novacorp20.onmicrosoft.com')
+    
+    # Buscar archivos Excel en la carpeta Documentos_Merge
+    search_url = f"https://graph.microsoft.com/v1.0/users/{user_email}/drive/root:/Documentos_Merge:/children"
+    
+    headers = {'Authorization': f'Bearer {access_token}'}
+    response = requests.get(search_url, headers=headers)
+    
+    if response.status_code != 200:
+        raise FileNotFoundError(f"No se pudo acceder a la carpeta Documentos_Merge: {response.text}")
+    
+    files = response.json().get('value', [])
+    excel_files = [f for f in files if f['name'].endswith(('.xlsx', '.xls'))]
+    
+    if not excel_files:
+        raise FileNotFoundError("No se encontraron archivos Excel en Documentos_Merge")
+    
+    # Usar el primer archivo Excel encontrado
+    excel_file = excel_files[0]
+    download_url = excel_file['@microsoft.graph.downloadUrl']
+    
+    print(f"[INFO] Descargando Excel desde OneDrive: {excel_file['name']}")
+    
+    # Descargar archivo
+    file_response = requests.get(download_url)
+    if file_response.status_code != 200:
+        raise FileNotFoundError("No se pudo descargar el archivo Excel")
+    
+    # Guardar en archivo temporal
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')
+    temp_file.write(file_response.content)
+    temp_file.close()
+    
+    return temp_file.name
+
+def get_excel_data():
+    global access_token, temp_excel_path
+    
+    # Usar OneDrive como única fuente
+    print("[INFO] Descargando Excel desde OneDrive...")
+    temp_excel_path = download_excel_from_onedrive()
+    
+    if not temp_excel_path:
+        raise FileNotFoundError("No se pudo descargar el Excel desde OneDrive")
+    
+    return pd.read_excel(temp_excel_path)
+
 # Cargar Excel
-df = pd.read_excel(EXCEL_PATH, engine='openpyxl')
+df = get_excel_data()
 
 # Leer plantilla Word
 with open(TEMPLATE_PATH, 'rb') as file:
@@ -132,13 +195,31 @@ for idx, row in df.iterrows():
             # Obtener token y subir
             access_token = get_access_token()
             if access_token:
-                uploader = OneDriveUploader(access_token, user_upn="mcanas@novacorp20.onmicrosoft.com")
+                uploader = OneDriveUploader(access_token, user_upn="servicioalcliente@novacorp20.onmicrosoft.com")
                 folder_path = f"Documentos_Generados/Comunicados/{nit}"
                 uploader.create_folder(folder_path)
                 uploader.upload_file(temp_file.name, folder_path, nombre_archivo)
 
-            os.unlink(temp_file.name)
+            # Intentar eliminar archivo temporal con reintentos
+            for attempt in range(3):
+                try:
+                    time.sleep(0.1)  # Pequeño delay
+                    os.unlink(temp_file.name)
+                    break
+                except PermissionError:
+                    if attempt == 2:  # Último intento
+                        print(f"[WARNING] No se pudo eliminar archivo temporal: {temp_file.name}")
+                    else:
+                        time.sleep(0.5)  # Esperar más tiempo
     else:
         local_path = os.path.join(cliente_dir, nombre_archivo)
         doc.save(local_path)
         print(f" Documento generado: {local_path}")
+
+# Limpiar archivo temporal si se usó
+if temp_excel_path:
+    try:
+        os.unlink(temp_excel_path)
+        print(f"[INFO] Archivo temporal eliminado: {temp_excel_path}")
+    except Exception as e:
+        print(f"[WARNING] No se pudo eliminar archivo temporal: {e}")
