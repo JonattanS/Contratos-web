@@ -64,7 +64,7 @@ def upload_excel_to_onedrive():
     # Subir al OneDrive de salfonso
     print("📤 Subiendo Excel al OneDrive de salfonso...")
     
-    uploader = OneDriveUploader(access_token, user_upn="salfonso@novacorp20.onmicrosoft.com")
+    uploader = OneDriveUploader(access_token, user_upn="servicioalcliente@novacorp20.onmicrosoft.com")
     
     # Crear carpeta
     folder_path = "Documentos_Merges"
@@ -90,6 +90,6 @@ if __name__ == "__main__":
     
     if success:
         print("\n🎉 ¡Proceso completado exitosamente!")
-        print("📁 Ubicación: salfonso@novacorp20.onmicrosoft.com/Documentos_Merges/clientes.xlsx")
+        print("📁 Ubicación: servicioalcliente@novacorp20.onmicrosoft.com/Documentos_Merges/clientes.xlsx")
     else:
         print("\n❌ El proceso falló")

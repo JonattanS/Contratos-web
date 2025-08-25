@@ -2,6 +2,9 @@ import os
 from dotenv import load_dotenv
 import msal
 import requests
+import tempfile
+from datetime import datetime
+from onedrive_uploader import OneDriveUploader
 
 # Cargar variables de entorno
 load_dotenv()
@@ -67,7 +70,12 @@ def test_azure_configuration():
                 print("[SUCCESS] Acceso a OneDrive confirmado")
                 drive_info = response.json()
                 print(f"OneDrive: {drive_info.get('name', 'N/A')}")
-                return True
+                
+                # Crear documento de prueba
+                print("\n[INFO] Creando documento de prueba...")
+                success_test = create_test_document(result["access_token"], email)
+                
+                return success_test
             else:
                 print(f"[ERROR] Error accediendo a OneDrive: {response.status_code}")
                 print(f"Respuesta: {response.text}")
@@ -81,6 +89,51 @@ def test_azure_configuration():
             
     except Exception as e:
         print(f"[ERROR] Error de conexión: {str(e)}")
+        return False
+
+def create_test_document(access_token, email):
+    """Crear documento de prueba en OneDrive"""
+    try:
+        # Crear contenido del documento
+        test_content = f"""PRUEBA DE CONFIGURACIÓN AZURE AD
+
+Fecha: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+Usuario: {email}
+Estado: ÉXITO
+
+La configuración de Azure AD y Microsoft Graph API está funcionando correctamente.
+Este documento fue creado automáticamente para verificar la conectividad.
+
+¡Configuración exitosa!"""
+        
+        # Crear archivo temporal
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt', encoding='utf-8') as temp_file:
+            temp_file.write(test_content)
+            temp_file_path = temp_file.name
+        
+        # Subir usando OneDriveUploader
+        uploader = OneDriveUploader(access_token, user_upn=email)
+        
+        # Crear carpeta de prueba
+        folder_path = "Documentos_Prueba"
+        uploader.create_folder(folder_path)
+        
+        # Subir archivo
+        filename = f"exito_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+        success = uploader.upload_file(temp_file_path, folder_path, filename)
+        
+        # Limpiar archivo temporal
+        os.unlink(temp_file_path)
+        
+        if success:
+            print(f"[SUCCESS] Documento de prueba creado: {folder_path}/{filename}")
+            return True
+        else:
+            print("[ERROR] No se pudo crear el documento de prueba")
+            return False
+            
+    except Exception as e:
+        print(f"[ERROR] Error creando documento de prueba: {str(e)}")
         return False
 
 if __name__ == "__main__":

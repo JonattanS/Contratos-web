@@ -45,7 +45,7 @@ def main():
         return
     
     # Configurar uploader
-    user_email = 'mcanas@novacorp20.onmicrosoft.com'
+    user_email = 'servicioalcliente@novacorp20.onmicrosoft.com'
     uploader = OneDriveUploader(access_token, user_upn=user_email)
     
     print(f"📧 Usando cuenta: {user_email}")

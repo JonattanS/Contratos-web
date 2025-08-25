@@ -15,7 +15,7 @@ load_dotenv()
 # Rutas
 ONEDRIVE_PATH = r"C:\Users\MCAÑAS\OneDrive - Nova Corp SAS"
 SHAREPOINT_EXCEL_URL = os.environ.get('SHAREPOINT_EXCEL_URL')
-TEMPLATE_PATH = "RENOVACION_202X_CLIENTE.docx"
+TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "RENOVACION_202X_CLIENTE.docx")
 
 # Configuración OneDrive externo (cambiar por la ruta compartida)
 EXTERNAL_ONEDRIVE = os.environ.get('EXTERNAL_ONEDRIVE_PATH', ONEDRIVE_PATH)
@@ -28,6 +28,35 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 access_token = None
 temp_excel_path = None
 
+def get_access_token():
+    """Obtener token de acceso usando MSAL"""
+    try:
+        client_id = os.environ.get('AZURE_CLIENT_ID')
+        client_secret = os.environ.get('AZURE_CLIENT_SECRET')
+        tenant_id = os.environ.get('AZURE_TENANT_ID')
+        
+        if not all([client_id, client_secret, tenant_id]):
+            print(" Faltan credenciales de Azure en .env")
+            return None
+            
+        app = msal.ConfidentialClientApplication(
+            client_id,
+            authority=f"https://login.microsoftonline.com/{tenant_id}",
+            client_credential=client_secret
+        )
+        
+        result = app.acquire_token_for_client(scopes=["https://graph.microsoft.com/.default"])
+        
+        if "access_token" in result:
+            return result["access_token"]
+        else:
+            print(f" Error obteniendo token: {result.get('error_description')}")
+            return None
+            
+    except Exception as e:
+        print(f" Error: {str(e)}")
+        return None
+
 def download_excel_from_onedrive():
     """Descargar Excel desde OneDrive carpeta Documentos_Merge"""
     global access_token
@@ -38,7 +67,7 @@ def download_excel_from_onedrive():
     if not access_token:
         raise ValueError("No se pudo obtener token de acceso de Azure")
     
-    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'mcanas@novacorp20.onmicrosoft.com')
+    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'servicioalcliente@novacorp20.onmicrosoft.com')
     
     # Buscar archivos Excel en la carpeta Documentos_Merge
     search_url = f"https://graph.microsoft.com/v1.0/users/{user_email}/drive/root:/Documentos_Merge:/children"
@@ -83,7 +112,7 @@ def get_excel_data():
     if not temp_excel_path:
         raise FileNotFoundError("No se pudo descargar el Excel desde OneDrive")
     
-    return pd.read_excel(temp_excel_path)
+    return pd.read_excel(temp_excel_path, engine='openpyxl')
 
 # Cargar Excel
 df = get_excel_data()
@@ -142,35 +171,6 @@ def reemplazar_etiquetas(doc, datos):
             for cell in row.cells:
                 reemplazar_en_parrafos(cell.paragraphs)
 
-def get_access_token():
-    """Obtener token de acceso usando MSAL"""
-    try:
-        client_id = os.environ.get('AZURE_CLIENT_ID')
-        client_secret = os.environ.get('AZURE_CLIENT_SECRET')
-        tenant_id = os.environ.get('AZURE_TENANT_ID')
-        
-        if not all([client_id, client_secret, tenant_id]):
-            print(" Faltan credenciales de Azure en .env")
-            return None
-            
-        app = msal.ConfidentialClientApplication(
-            client_id,
-            authority=f"https://login.microsoftonline.com/{tenant_id}",
-            client_credential=client_secret
-        )
-        
-        result = app.acquire_token_for_client(scopes=["https://graph.microsoft.com/.default"])
-        
-        if "access_token" in result:
-            return result["access_token"]
-        else:
-            print(f" Error obteniendo token: {result.get('error_description')}")
-            return None
-            
-    except Exception as e:
-        print(f" Error: {str(e)}")
-        return None
-
 # Generar un documento por cada fila del Excel
 for idx, row in df.iterrows():
     # Obtener NIT (primera columna)
@@ -194,7 +194,7 @@ for idx, row in df.iterrows():
             # Obtener token y subir
             access_token = get_access_token()
             if access_token:
-                uploader = OneDriveUploader(access_token, user_upn="mcanas@novacorp20.onmicrosoft.com")
+                uploader = OneDriveUploader(access_token, user_upn="servicioalcliente@novacorp20.onmicrosoft.com")
                 folder_path = f"Documentos_Generados/Comunicados/{nit}"
                 uploader.create_folder(folder_path)
                 uploader.upload_file(temp_file.name, folder_path, nombre_archivo)

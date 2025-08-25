@@ -5,67 +5,90 @@ import { ServiceCard } from "@/components/Dashboard/ServiceCard";
 import { DocumentForm } from "@/components/Forms/DocumentForm";
 import { QuoteForm } from "@/components/Forms/QuoteForm";
 import { NotificationForm } from "@/components/Forms/NotificationForm";
+import { useToast } from "@/hooks/use-toast";
 
 type ActiveView = "dashboard" | "documents" | "quotes" | "notifications";
 
 export const Dashboard = () => {
   const [activeView, setActiveView] = useState<ActiveView>("dashboard");
+  const { toast } = useToast();
 
-  // Función para ejecutar el script python vía backend
-  const handleGenerarComunicado = async () => {
+  const executePythonScript = async () => {
     try {
-      const res = await fetch('http://10.11.11.246:3002/api/ejecutar-comunicado', {
-        method: 'POST'
+      const response = await fetch('http://localhost:3010/execute-comunicado', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
-      const data = await res.json();
-      if (data.success) {
-        alert(`Comunicado generado:\n${data.output}`);
+      
+      if (response.ok) {
+        const result = await response.text();
+        console.log('Comunicado.py ejecutado:', result);
+        toast({
+          title: "Ejecución Exitosa",
+          description: "Documentos generados exitosamente.",
+        });
       } else {
-        alert(`Error:\n${data.error || 'Ocurrió un problema'}`);
+        throw new Error('Error al ejecutar el programa');
       }
-    } catch (err) {
-      console.error(err);
-      alert('Fallo la ejecución del comunicado');
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Error de Ejecución",
+        description: "No se pudo ejecutar Comunicado.py. Verifica que el servidor esté activo.",
+        variant: "destructive",
+      });
     }
-  }; 
-  
-  // Función para ejecutar el script python vía backend
-  const handleGenerarCotizacion = async () => {
+  };
+
+  const executeRenovacionScript = async () => {
     try {
-      const res = await fetch('http://10.11.11.246:3002/api/ejecutar-cotizacion', {
-        method: 'POST'
+      const response = await fetch('http://localhost:3011/execute-renovacion', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
-      const data = await res.json();
-      if (data.success) {
-        alert(`Cotizacion generada:\n${data.output}`);
+      
+      if (response.ok) {
+        const result = await response.text();
+        console.log('Renovacion1.py ejecutado:', result);
+        toast({
+          title: "Renovación Exitosa",
+          description: "Documentos generados exitosamente.",
+        });
       } else {
-        alert(`Error:\n${data.error || 'Ocurrió un problema'}`);
+        throw new Error('Error al ejecutar el programa');
       }
-    } catch (err) {
-      console.error(err);
-      alert('Fallo la ejecución de la cotizacion');
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Error de Ejecución",
+        description: "No se pudo ejecutar Renovacion1.py. Verifica que el servidor esté activo.",
+        variant: "destructive",
+      });
     }
   };
 
   const services = [
     {
       title: "Generar Comunicados",
-      description: "Crea documentos oficiales empresariales con formato estándar para el contrato.",
+      description: "Ejecuta el programa Comunicado.py para generar documentos oficiales.",
       icon: FileText,
       variant: "primary" as const,
-      // Aquí se llama al handler que ejecuta el script, no cambia la vista
-      onClick: handleGenerarComunicado
+      onClick: executePythonScript
     },
     {
       title: "Generar Cotizaciones",
-      description: "Elabora cotizaciones profesionales, términos y condiciones personalizables dependiendo de la informacion que este en el formato.",
+      description: "Ejecuta el programa Renovacion1.py para generar cotizaciones y renovaciones.",
       icon: Calculator,
       variant: "secondary" as const,
-      onClick: handleGenerarCotizacion
+      onClick: executeRenovacionScript
     },
     {
       title: "Notificaciones Automatizadas",
-      description: "Accede al sistema de notificaciones integrado con NotiNova para automatizar alertas.",
+      description: "Accede al sistema de notificaciones integrado con Amazon QA para automatizar alertas y recordatorios.",
       icon: Bell,
       variant: "accent" as const,
       onClick: () => setActiveView("notifications")
