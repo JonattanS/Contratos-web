@@ -14,7 +14,7 @@ export const Dashboard = () => {
 
   const executePythonScript = async () => {
     try {
-      const response = await fetch('http://localhost:3010/execute-comunicado', {
+      const response = await fetch('http://10.11.11.246:3002/api/ejecutar-comunicado', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -43,7 +43,7 @@ export const Dashboard = () => {
 
   const executeRenovacionScript = async () => {
     try {
-      const response = await fetch('http://localhost:3011/execute-renovacion', {
+      const response = await fetch('http://10.11.11.246:3002/api/ejecutar-cotizacion', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
