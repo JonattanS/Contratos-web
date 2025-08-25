@@ -5,13 +5,12 @@ import { ServiceCard } from "@/components/Dashboard/ServiceCard";
 import { DocumentForm } from "@/components/Forms/DocumentForm";
 import { QuoteForm } from "@/components/Forms/QuoteForm";
 import { NotificationForm } from "@/components/Forms/NotificationForm";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 type ActiveView = "dashboard" | "documents" | "quotes" | "notifications";
 
 export const Dashboard = () => {
   const [activeView, setActiveView] = useState<ActiveView>("dashboard");
-  const { toast } = useToast();
 
   const executePythonScript = async () => {
     try {
