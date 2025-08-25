@@ -3,18 +3,19 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Eye, EyeOff, User, Lock, AlertCircle } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { AlertCircle, Eye, EyeOff } from "lucide-react"
 import { BACKEND_URL } from "../config"
 
 const Login: React.FC<{ onLogin: (token: string) => void }> = ({ onLogin }) => {
   const [usrcod, setUsrcod] = useState("")
   const [usrpsw, setUsrpsw] = useState("")
   const [error, setError] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [selectedCompany, setSelectedCompany] = useState("Nova Corp SAS")
+  const [showPassword, setShowPassword] = useState(false)
   const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,63 +46,54 @@ const Login: React.FC<{ onLogin: (token: string) => void }> = ({ onLogin }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#00264D] via-[#003366] to-[#001a33] flex items-center justify-center p-4">
-      {/* Background decoration */}
-      <div className="absolute inset-0 bg-[url('/placeholder.svg?height=1080&width=1920')] bg-cover bg-center opacity-5"></div>
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-800/20 via-slate-700/20 to-blue-900/20"></div>
-
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       {/* Login Card */}
-      <Card className="w-full max-w-md relative z-10 bg-white/10 backdrop-blur-xl border-white/20 shadow-2xl">
-        <CardHeader className="space-y-1 text-center">
-          <div className="mx-auto w-16 h-16 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full flex items-center justify-center mb-4 shadow-lg">
-            <User className="w-8 h-8 text-white" />
+      <Card className="w-full max-w-md bg-white shadow-lg border-0">
+        <CardHeader className="text-center pb-6 pt-8">
+          {/* Logo */}
+          <div className="mx-auto mb-6">
+            <img src="/assets/Logo-NovaCorp-oficial.png" alt="iNova Logo" className="h-16 mx-auto mb-2" />
+            <div className="text-center text-sm text-gray-400">
+                Bienvenido a NovaCont
+            </div>
           </div>
-          <CardTitle className="text-2xl font-bold text-white">Iniciar sesión</CardTitle>
-          <CardDescription className="text-gray-300">Accede a NovaCont</CardDescription>
+
+          <h1 className="text-xl font-medium text-gray-800 mb-6">Iniciar sesión</h1>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="px-8 pb-8">
           <form onSubmit={handleSubmit} className="space-y-4">
+            
             {/* Usuario Field */}
             <div className="space-y-2">
-              <Label htmlFor="usrcod" className="text-white font-medium">
-                Usuario
-              </Label>
-              <div className="relative">
-                <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="usrcod"
-                  type="text"
-                  placeholder="Ingresa tu usuario"
-                  value={usrcod}
-                  onChange={(e) => setUsrcod(e.target.value)}
-                  required
-                  autoFocus
-                  className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400 focus:border-orange-400 focus:ring-2 focus:ring-orange-400/30 focus:ring-offset-0"
-                />
-              </div>
+              <Input
+                id="usrcod"
+                type="text"
+                placeholder="Usuario"
+                value={usrcod}
+                onChange={(e) => setUsrcod(e.target.value)}
+                required
+                autoFocus
+                className="border-gray-300 focus:border-[#F57F2C] focus:ring-[#F57F2C]/20 placeholder:text-gray-400"
+              />
             </div>
 
             {/* Contraseña Field */}
             <div className="space-y-2">
-              <Label htmlFor="usrpsw" className="text-white font-medium">
-                Contraseña
-              </Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
                   id="usrpsw"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Ingresa tu contraseña"
+                  placeholder="Contraseña"
                   value={usrpsw}
                   onChange={(e) => setUsrpsw(e.target.value)}
                   required
-                  className="pl-10 pr-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400 focus:border-orange-400 focus:ring-2 focus:ring-orange-400/30 focus:ring-offset-0"
+                  className="pr-10 border-gray-300 focus:border-[#F57F2C] focus:ring-[#F57F2C]/20 placeholder:text-gray-400"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-gray-400 hover:text-white transition-colors"
+                  className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -110,7 +102,7 @@ const Login: React.FC<{ onLogin: (token: string) => void }> = ({ onLogin }) => {
 
             {/* Error Message */}
             {error && (
-              <Alert className="bg-red-500/10 border-red-500/20 text-red-300">
+              <Alert className="bg-red-50 border-red-200 text-red-700">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
@@ -120,7 +112,7 @@ const Login: React.FC<{ onLogin: (token: string) => void }> = ({ onLogin }) => {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-3 shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
+              className="w-full bg-[#F57F2C] hover:bg-[#E56F1C] text-white font-medium py-3 mt-6 shadow-sm transition-colors duration-200 disabled:opacity-50"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">
@@ -128,19 +120,18 @@ const Login: React.FC<{ onLogin: (token: string) => void }> = ({ onLogin }) => {
                   Ingresando...
                 </div>
               ) : (
-                "Ingresar"
+                "INGRESAR"
               )}
             </Button>
-
             {/* Footer Links */}
             <div className="space-y-3 pt-4">
               <div className="text-center">
-                <button type="button" className="text-gray-300 ">
+                <button type="button" className="text-gray-400 ">
                   ¿Olvidaste tu contraseña?
                 </button>
               </div>
 
-              <div className="text-center text-sm text-gray-400">
+              <div className="text-center text-sm text-black">
                 Solicita acceso a el area de desarrollo
               </div>
             </div>
@@ -148,10 +139,10 @@ const Login: React.FC<{ onLogin: (token: string) => void }> = ({ onLogin }) => {
         </CardContent>
       </Card>
 
-      {/* Floating elements for decoration */}
-      <div className="absolute top-20 left-20 w-32 h-32 bg-blue-400/10 rounded-full blur-xl"></div>
-      <div className="absolute bottom-20 right-20 w-40 h-40 bg-slate-400/10 rounded-full blur-xl"></div>
-      <div className="absolute top-1/2 left-10 w-24 h-24 bg-blue-300/10 rounded-full blur-xl"></div>
+      {/* Footer */}
+      <div className="absolute bottom-4 left-0 right-0 text-center">
+        <p className="text-sm text-gray-500">© 2025 – Nova corp SAS</p>
+      </div>
     </div>
   )
 }
