@@ -46,13 +46,13 @@ export const NotificationForm = ({ onBack }: NotificationFormProps) => {
 
     setLoading(true);
     try {
-      const response = await fetch("http://10.11.11.5:8083/api/notifications/send", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+      
+      const response = await fetch('http://10.11.11.246:3002/api/notifications/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
+
 
       if (response.ok) {
         toast({

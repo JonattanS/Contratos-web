@@ -24,6 +24,10 @@ app.use('/api', comunicadoRouter);
 const cotizacionesRouter = require('./routes/Cotizaciones');
 app.use('/api', cotizacionesRouter);
 
+const notificationProxyRouter = require('./routes/notificationProxy');
+app.use('/api', notificationProxyRouter);
+
+
 // Endpoint para ejecutar queries con configuración dinámica (pool temporal)
 
 const pool = require('./db');
