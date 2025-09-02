@@ -32,23 +32,8 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
  */
 const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useUser();
-
-  const renderRoleBanner = () => {
-    if (user?.rolcod === "adm") {
-      return <p className="text-sm text-green-600 font-semibold">Adm</p>;
-    }
-    if (user?.rolcod === "teso") {
-      return <p className="text-sm text-yellow-600 font-semibold">Teso</p>;
-    }
-    if (user?.rolcod === "conta") {
-      return <p className="text-sm text-blue-600 font-semibold">Cont</p>;
-    }
-    return null; // O algún banner por defecto si quieres
-  };
-
   return (
     <div>
-      {renderRoleBanner()}
       {children}
     </div>
   );
