@@ -1,5 +1,6 @@
 pandas
 python-docx
+docx2pdf
 python-dotenv
 msal
 requests

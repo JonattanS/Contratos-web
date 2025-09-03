@@ -67,7 +67,7 @@ def download_excel_from_onedrive():
     if not access_token:
         raise ValueError("No se pudo obtener token de acceso de Azure")
     
-    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'servicioalcliente@novacorp-plus.com')
+    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'mcanas@novacorp-plus.com')
     
     # Buscar archivos Excel en la carpeta Documentos_Merge
     search_url = f"https://graph.microsoft.com/v1.0/users/{user_email}/drive/root:/Documentos_Merge:/children"
@@ -116,7 +116,7 @@ def get_excel_data():
 
 def get_onedrive_link(file_path, access_token):
     """Obtener link compartible de OneDrive para un archivo"""
-    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'servicioalcliente@novacorp-plus.com')
+    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'mcanas@novacorp-plus.com')
     headers = {'Authorization': f'Bearer {access_token}'}
     
     # Obtener información del archivo
@@ -157,7 +157,7 @@ def upload_excel_to_onedrive():
     if not access_token or not temp_excel_path:
         return
     
-    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'servicioalcliente@novacorp-plus.com')
+    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'mcanas@novacorp-plus.com')
     
     # Obtener nombre del archivo Excel original
     search_url = f"https://graph.microsoft.com/v1.0/users/{user_email}/drive/root:/Documentos_Merge:/children"
@@ -261,7 +261,7 @@ for idx, row in df.iterrows():
             # Obtener token y subir
             access_token = get_access_token()
             if access_token:
-                uploader = OneDriveUploader(access_token, user_upn="servicioalcliente@novacorp-plus.com")
+                uploader = OneDriveUploader(access_token, user_upn="mcanas@novacorp-plus.com")
                 folder_path = f"Documentos_Generados/Comunicados/{nit}"
                 uploader.create_folder(folder_path)
                 uploader.upload_file(temp_file.name, folder_path, nombre_archivo)
