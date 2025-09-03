@@ -58,27 +58,61 @@ def test_azure_configuration():
                 'Content-Type': 'application/json'
             }
             
-            # Probar acceso a Microsoft Graph con Application permissions
-            # Usar el email configurado para acceder a su OneDrive
-            email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'servicioalcliente@novacorp20.onmicrosoft.com')
-            response = requests.get(
-                f"https://graph.microsoft.com/v1.0/users/{email}/drive",
+            # Primero listar usuarios disponibles
+            print("\n[INFO] Verificando usuarios disponibles...")
+            users_response = requests.get(
+                "https://graph.microsoft.com/v1.0/users?$select=userPrincipalName,displayName&$top=10",
                 headers=headers
             )
             
-            if response.status_code == 200:
-                print("[SUCCESS] Acceso a OneDrive confirmado")
-                drive_info = response.json()
-                print(f"OneDrive: {drive_info.get('name', 'N/A')}")
+            if users_response.status_code == 200:
+                users = users_response.json().get('value', [])
+                print(f"[INFO] Usuarios encontrados ({len(users)}):")
+                for user in users:
+                    print(f"  - {user.get('userPrincipalName')} ({user.get('displayName')})")
                 
-                # Crear documento de prueba
-                print("\n[INFO] Creando documento de prueba...")
-                success_test = create_test_document(result["access_token"], email)
+                # Usar el email configurado para acceder a su OneDrive
+                email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'servicioalcliente@novacorp-plus.com')
+                print(f"\n[INFO] Intentando acceder a OneDrive de: {email}")
                 
-                return success_test
+                response = requests.get(
+                    f"https://graph.microsoft.com/v1.0/users/{email}/drive",
+                    headers=headers
+                )
+                
+                if response.status_code == 200:
+                    print("[SUCCESS] Acceso a OneDrive confirmado")
+                    drive_info = response.json()
+                    print(f"OneDrive: {drive_info.get('name', 'N/A')}")
+                    
+                    # Crear documento de prueba
+                    print("\n[INFO] Creando documento de prueba...")
+                    success_test = create_test_document(result["access_token"], email)
+                    
+                    return success_test
+                else:
+                    print(f"[ERROR] Error accediendo a OneDrive: {response.status_code}")
+                    print(f"Respuesta: {response.text}")
+                    
+                    # Si el usuario configurado no funciona, probar con el primer usuario disponible
+                    if users and users[0].get('userPrincipalName'):
+                        test_email = users[0]['userPrincipalName']
+                        print(f"\n[INFO] Probando con primer usuario disponible: {test_email}")
+                        
+                        test_response = requests.get(
+                            f"https://graph.microsoft.com/v1.0/users/{test_email}/drive",
+                            headers=headers
+                        )
+                        
+                        if test_response.status_code == 200:
+                            print("[SUCCESS] Acceso a OneDrive confirmado con usuario alternativo")
+                            print(f"[SUGERENCIA] Cambiar EXTERNAL_ONEDRIVE_EMAIL a: {test_email}")
+                            return True
+                    
+                    return False
             else:
-                print(f"[ERROR] Error accediendo a OneDrive: {response.status_code}")
-                print(f"Respuesta: {response.text}")
+                print(f"[ERROR] Error listando usuarios: {users_response.status_code}")
+                print(f"Respuesta: {users_response.text}")
                 return False
                 
         else:

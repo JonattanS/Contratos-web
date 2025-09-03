@@ -67,7 +67,7 @@ def download_excel_from_onedrive():
     if not access_token:
         raise ValueError("No se pudo obtener token de acceso de Azure")
     
-    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'servicioalcliente@novacorp20.onmicrosoft.com')
+    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'servicioalcliente@novacorp-plus.com')
     
     # Buscar archivos Excel en la carpeta Documentos_Merge
     search_url = f"https://graph.microsoft.com/v1.0/users/{user_email}/drive/root:/Documentos_Merge:/children"
@@ -113,6 +113,73 @@ def get_excel_data():
         raise FileNotFoundError("No se pudo descargar el Excel desde OneDrive")
     
     return pd.read_excel(temp_excel_path, engine='openpyxl')
+
+def get_onedrive_link(file_path, access_token):
+    """Obtener link compartible de OneDrive para un archivo"""
+    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'servicioalcliente@novacorp-plus.com')
+    headers = {'Authorization': f'Bearer {access_token}'}
+    
+    # Obtener información del archivo
+    file_url = f"https://graph.microsoft.com/v1.0/users/{user_email}/drive/root:/{file_path}"
+    response = requests.get(file_url, headers=headers)
+    
+    if response.status_code == 200:
+        file_info = response.json()
+        return file_info.get('webUrl', '')
+    return ''
+
+def update_excel_with_link(nit, document_link):
+    """Actualizar Excel con el link del documento generado"""
+    global df, temp_excel_path, access_token
+    
+    # Buscar la fila correspondiente al NIT
+    nit_column = df.columns[0]  # Primera columna es NIT
+    mask = df[nit_column].astype(str) == str(nit)
+    
+    if mask.any():
+        # Agregar columna de link si no existe
+        if 'Link_Comunicado' not in df.columns:
+            df['Link_Comunicado'] = ''
+        
+        # Actualizar el link
+        df.loc[mask, 'Link_Comunicado'] = document_link
+        
+        # Guardar Excel actualizado
+        df.to_excel(temp_excel_path, index=False, engine='openpyxl')
+        
+        # Subir Excel actualizado a OneDrive
+        upload_excel_to_onedrive()
+
+def upload_excel_to_onedrive():
+    """Subir Excel actualizado de vuelta a OneDrive"""
+    global access_token, temp_excel_path
+    
+    if not access_token or not temp_excel_path:
+        return
+    
+    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'servicioalcliente@novacorp-plus.com')
+    
+    # Obtener nombre del archivo Excel original
+    search_url = f"https://graph.microsoft.com/v1.0/users/{user_email}/drive/root:/Documentos_Merge:/children"
+    headers = {'Authorization': f'Bearer {access_token}'}
+    response = requests.get(search_url, headers=headers)
+    
+    if response.status_code == 200:
+        files = response.json().get('value', [])
+        excel_files = [f for f in files if f['name'].endswith(('.xlsx', '.xls'))]
+        
+        if excel_files:
+            excel_name = excel_files[0]['name']
+            
+            # Subir archivo actualizado
+            with open(temp_excel_path, 'rb') as file_content:
+                upload_url = f"https://graph.microsoft.com/v1.0/users/{user_email}/drive/root:/Documentos_Merge/{excel_name}:/content"
+                upload_response = requests.put(upload_url, headers=headers, data=file_content)
+                
+                if upload_response.status_code in [200, 201]:
+                    print(f"[INFO] Excel actualizado en OneDrive: {excel_name}")
+                else:
+                    print(f"[WARNING] Error actualizando Excel: {upload_response.text}")
 
 # Cargar Excel
 df = get_excel_data()
@@ -194,10 +261,17 @@ for idx, row in df.iterrows():
             # Obtener token y subir
             access_token = get_access_token()
             if access_token:
-                uploader = OneDriveUploader(access_token, user_upn="servicioalcliente@novacorp20.onmicrosoft.com")
+                uploader = OneDriveUploader(access_token, user_upn="servicioalcliente@novacorp-plus.com")
                 folder_path = f"Documentos_Generados/Comunicados/{nit}"
                 uploader.create_folder(folder_path)
                 uploader.upload_file(temp_file.name, folder_path, nombre_archivo)
+                
+                # Obtener link del documento y actualizar Excel
+                document_path = f"{folder_path}/{nombre_archivo}"
+                document_link = get_onedrive_link(document_path, access_token)
+                if document_link:
+                    update_excel_with_link(nit, document_link)
+                    print(f"[INFO] Link guardado en Excel para NIT {nit}")
 
             # Intentar eliminar archivo temporal con reintentos
             for attempt in range(3):
