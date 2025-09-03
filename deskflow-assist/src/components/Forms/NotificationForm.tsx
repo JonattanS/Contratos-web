@@ -38,26 +38,25 @@ export const NotificationForm = ({ onBack }: NotificationFormProps) => {
       return;
     }
 
+    // Usar solo el primer ID como string (API solo acepta uno)
     const payload = {
       channels: ["telegram"],
-      chatId: chatIds,
+      chatId: chatIds[0],
       message: message,
     };
 
     setLoading(true);
     try {
-      
       const response = await fetch('http://10.11.11.246:3002/api/notifications/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
-
       if (response.ok) {
         toast({
           title: "Notificación enviada",
-          description: "El mensaje ha sido enviado a los usuarios especificados.",
+          description: "El mensaje ha sido enviado al usuario especificado.",
         });
         setChatIdsInput("");
         setMessage("");
@@ -79,6 +78,7 @@ export const NotificationForm = ({ onBack }: NotificationFormProps) => {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
