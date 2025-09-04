@@ -8,21 +8,41 @@ from onedrive_uploader import OneDriveUploader
 import msal
 import requests
 import time
+import shutil
 
 # Cargar variables de entorno
 load_dotenv()
 
-# Rutas
-ONEDRIVE_PATH = r"C:\Users\MCAÑAS\OneDrive - Nova Corp SAS"
-SHAREPOINT_EXCEL_URL = os.environ.get('SHAREPOINT_EXCEL_URL')
-TEMPLATE_PATH1 = os.path.join(os.path.dirname(__file__), "PROPUESTA FE Y NE RENOVACION 202X -CLIENTE1.docx")
-TEMPLATE_PATH2 = os.path.join(os.path.dirname(__file__), "PROPUESTA FE RENOVACION 202X -CLIENTE2.docx")
-OUTPUT_DIR = os.path.join(ONEDRIVE_PATH, "Documentos_Generados", "Renovaciones")
+# Variables globales
+TEMPLATE_PATH1 = None  # Se descargará desde OneDrive
+TEMPLATE_PATH2 = None  # Se descargará desde OneDrive
 
-# Crear carpeta de salida si no existe
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+def clean_existing_documents_onedrive():
+    """Limpiar documentos existentes en OneDrive antes de generar nuevos"""
+    access_token = get_access_token()
+    if not access_token:
+        print("[WARNING] No se pudo obtener token para limpiar documentos")
+        return
+    
+    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'mcanas@novacorp-plus.com')
+    headers = {'Authorization': f'Bearer {access_token}'}
+    
+    # Verificar si existe la carpeta Documentos_Generados/Renovaciones
+    folder_url = f"https://graph.microsoft.com/v1.0/users/{user_email}/drive/root:/Documentos_Generados/Renovaciones"
+    response = requests.get(folder_url, headers=headers)
+    
+    if response.status_code == 200:
+        # Eliminar la carpeta completa
+        delete_url = f"https://graph.microsoft.com/v1.0/users/{user_email}/drive/root:/Documentos_Generados/Renovaciones"
+        delete_response = requests.delete(delete_url, headers=headers)
+        if delete_response.status_code == 204:
+            print("[INFO] Documentos existentes eliminados de OneDrive")
+        else:
+            print(f"[WARNING] Error eliminando documentos: {delete_response.text}")
+    else:
+        print("[INFO] No hay documentos existentes que eliminar")
 
-# Obtener token para descargar Excel desde SharePoint
+# Variables globales
 access_token = None
 temp_excel_path = None
 
@@ -54,6 +74,62 @@ def get_access_token():
     except Exception as e:
         print(f" Error: {str(e)}")
         return None
+
+def download_templates_from_onedrive():
+    """Descargar plantillas Word desde OneDrive carpeta Documentos_Merge"""
+    global access_token
+    
+    if not access_token:
+        access_token = get_access_token()
+    
+    if not access_token:
+        raise ValueError("No se pudo obtener token de acceso de Azure")
+    
+    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'mcanas@novacorp-plus.com')
+    
+    # Buscar archivos Word en la carpeta Documentos_Merge
+    search_url = f"https://graph.microsoft.com/v1.0/users/{user_email}/drive/root:/Documentos_Merge:/children"
+    
+    headers = {'Authorization': f'Bearer {access_token}'}
+    response = requests.get(search_url, headers=headers)
+    
+    if response.status_code != 200:
+        raise FileNotFoundError(f"No se pudo acceder a la carpeta Documentos_Merge: {response.text}")
+    
+    files = response.json().get('value', [])
+    
+    # Buscar plantillas específicas PROPUESTA FE
+    template1_files = [f for f in files if f['name'].endswith('.docx') and 
+                      'propuesta' in f['name'].lower() and 'cliente1' in f['name'].lower()]
+    template2_files = [f for f in files if f['name'].endswith('.docx') and 
+                      'propuesta' in f['name'].lower() and 'cliente2' in f['name'].lower()]
+    
+    if not template1_files:
+        raise FileNotFoundError("No se encontró plantilla CLIENTE1 en Documentos_Merge")
+    if not template2_files:
+        raise FileNotFoundError("No se encontró plantilla CLIENTE2 en Documentos_Merge")
+    
+    # Descargar ambas plantillas
+    templates = {}
+    for i, (template_files, name) in enumerate([(template1_files, 'CLIENTE1'), (template2_files, 'CLIENTE2')], 1):
+        template_file = template_files[0]
+        download_url = template_file['@microsoft.graph.downloadUrl']
+        
+        print(f"[INFO] Descargando plantilla {name} desde OneDrive: {template_file['name']}")
+        
+        # Descargar archivo
+        file_response = requests.get(download_url)
+        if file_response.status_code != 200:
+            raise FileNotFoundError(f"No se pudo descargar la plantilla {name}")
+        
+        # Guardar en archivo temporal
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.docx')
+        temp_file.write(file_response.content)
+        temp_file.close()
+        
+        templates[i] = temp_file.name
+    
+    return templates[1], templates[2]
 
 def download_excel_from_onedrive():
     """Descargar Excel desde OneDrive carpeta Documentos_Merge"""
@@ -179,8 +255,16 @@ def upload_excel_to_onedrive():
                 else:
                     print(f"[WARNING] Error actualizando Excel: {upload_response.text}")
 
+# Limpiar documentos existentes en OneDrive
+print("[INFO] Limpiando documentos existentes en OneDrive...")
+clean_existing_documents_onedrive()
+
 # Cargar Excel
 df = get_excel_data()
+
+# Descargar plantillas desde OneDrive
+TEMPLATE_PATH1, TEMPLATE_PATH2 = download_templates_from_onedrive()
+print(f"[INFO] Plantillas descargadas: {TEMPLATE_PATH1}, {TEMPLATE_PATH2}")
 
 # Función para reemplazar etiquetas en párrafos y tablas
 def reemplazar_etiquetas(doc, datos):
@@ -203,18 +287,26 @@ def reemplazar_etiquetas(doc, datos):
     todos_datos = {**datos_fecha, **datos}
 
     def reemplazar_en_parrafos(parrafos):
-         for p in parrafos:
+        for p in parrafos:
+            texto_completo = p.text
             for key, value in todos_datos.items():
                 patrones = [
                     f"<{key}>",        # <Valor por Documento>
                     f"« {key}»",       # « Valor por Documento»
                     f"$<{key}>",       # $<Valor por Documento>
-                    f"${{key}}",       # ${Valor por Documento}, por si acaso
+                    f"${{{key}}}",     # ${Valor por Documento}
                 ]
-                for run in p.runs:
-                    for etiqueta in patrones:
-                        if etiqueta in run.text:
-                            run.text = run.text.replace(etiqueta, str(value))
+                
+                for etiqueta in patrones:
+                    if etiqueta in texto_completo:
+                        # Reemplazar en el texto completo del párrafo
+                        nuevo_texto = texto_completo.replace(etiqueta, str(value))
+                        
+                        # Si hubo cambios, limpiar el párrafo y agregar el nuevo texto
+                        if nuevo_texto != texto_completo:
+                            p.clear()
+                            p.add_run(nuevo_texto)
+                            texto_completo = nuevo_texto
 
     def reemplazar_en_tablas(tablas):
         for table in tablas:
@@ -251,9 +343,7 @@ for idx, row in df.iterrows():
     # Cargar plantilla seleccionada
     doc = Document(plantilla)
 
-    # Crear carpeta para cliente
-    cliente_dir = os.path.join(OUTPUT_DIR, nit)
-    os.makedirs(cliente_dir, exist_ok=True)
+    # El NIT se usará para crear carpetas en OneDrive
 
     # Agregar mapeo específico para RAZÓN SOCIAL
     datos_cliente = row.to_dict()
@@ -269,46 +359,49 @@ for idx, row in df.iterrows():
     # Guardar documento
     nombre_archivo = f"Renovacion_{datetime.now().year}_{nit}.docx"
     
-    if os.environ.get('UPLOAD_TO_EXTERNAL', 'false').lower() == 'true':
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.docx') as temp_file:
-            doc.save(temp_file.name)
+    # Siempre subir a OneDrive
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.docx') as temp_file:
+        doc.save(temp_file.name)
 
-            # Obtener token y subir
-            access_token = get_access_token()
-            if access_token:
-                uploader = OneDriveUploader(access_token, user_upn="mcanas@novacorp-plus.com")
+        # Obtener token y subir
+        access_token = get_access_token()
+        if access_token:
+            uploader = OneDriveUploader(access_token, user_upn="mcanas@novacorp-plus.com")
+            folder_path = f"Documentos_Generados/Renovaciones/{nit}"
+            uploader.create_folder(folder_path)
+            uploader.upload_file(temp_file.name, folder_path, nombre_archivo)
+            
+            # Obtener link del documento y actualizar Excel
+            document_path = f"{folder_path}/{nombre_archivo}"
+            document_link = get_onedrive_link(document_path, access_token)
+            if document_link:
+                update_excel_with_link(nit, document_link)
+                print(f"[INFO] Documento generado y link guardado para NIT {nit}")
 
-                folder_path = f"Documentos_Generados/Renovaciones/{nit}"
-                uploader.create_folder(folder_path)
-                uploader.upload_file(temp_file.name, folder_path, nombre_archivo)
-                
-                # Obtener link del documento y actualizar Excel
-                document_path = f"{folder_path}/{nombre_archivo}"
-                document_link = get_onedrive_link(document_path, access_token)
-                if document_link:
-                    update_excel_with_link(nit, document_link)
-                    print(f"[INFO] Link guardado en Excel para NIT {nit}")
+        # Eliminar archivo temporal
+        try:
+            os.unlink(temp_file.name)
+        except Exception as e:
+            print(f"[WARNING] No se pudo eliminar archivo temporal: {e}")
 
-            # Intentar eliminar archivo temporal con reintentos
-            for attempt in range(3):
-                try:
-                    time.sleep(0.1)  # Pequeño delay
-                    os.unlink(temp_file.name)
-                    break
-                except PermissionError:
-                    if attempt == 2:  # Último intento
-                        print(f"[WARNING] No se pudo eliminar archivo temporal: {temp_file.name}")
-                    else:
-                        time.sleep(0.5)  # Esperar más tiempo
-    else:
-        local_path = os.path.join(cliente_dir, nombre_archivo)
-        doc.save(local_path)
-        print(f" Documento generado: {local_path}")
-
-# Limpiar archivo temporal si se usó
+# Limpiar archivos temporales
 if temp_excel_path:
     try:
         os.unlink(temp_excel_path)
-        print(f"[INFO] Archivo temporal eliminado: {temp_excel_path}")
+        print(f"[INFO] Archivo temporal Excel eliminado: {temp_excel_path}")
     except Exception as e:
-        print(f"[WARNING] No se pudo eliminar archivo temporal: {e}")
+        print(f"[WARNING] No se pudo eliminar archivo temporal Excel: {e}")
+
+if TEMPLATE_PATH1:
+    try:
+        os.unlink(TEMPLATE_PATH1)
+        print(f"[INFO] Archivo temporal plantilla 1 eliminado: {TEMPLATE_PATH1}")
+    except Exception as e:
+        print(f"[WARNING] No se pudo eliminar archivo temporal plantilla 1: {e}")
+
+if TEMPLATE_PATH2:
+    try:
+        os.unlink(TEMPLATE_PATH2)
+        print(f"[INFO] Archivo temporal plantilla 2 eliminado: {TEMPLATE_PATH2}")
+    except Exception as e:
+        print(f"[WARNING] No se pudo eliminar archivo temporal plantilla 2: {e}")
