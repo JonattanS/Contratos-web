@@ -4,7 +4,7 @@ const fetch = require('node-fetch'); // o usa undici nativo si tienes Node 18+
 const XLSX = require('xlsx');
 const path = require('path');
 
-const EXCEL_TEMP_PATH = path.join(__dirname, '..', 'Temp', 'tmpe2wq3gzr.xlsx');
+const EXCEL_TEMP_PATH = path.join(__dirname, '..', 'Temp', 'tmpekdiqrhl.xlsx');
 const NOTIFICATIONS_API = 'http://10.11.11.5:8083/api/notifications/send';
 
 // Funcionalidad antigua comentada intencionalmente
@@ -32,7 +32,7 @@ router.post('/notifications/send', async (req, res) => {
     const worksheet = workbook.Sheets[sheetName];
 
     // Leer datos desde fila 2 (range: 1) saltando encabezados
-    const jsonData = XLSX.utils.sheet_to_json(worksheet, { range: 1, defval: '' });
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { range: 0, defval: '' });
 
     // Procesar todas las filas y enviar notificaciones en paralelo
     const sendResults = await Promise.all(jsonData.map(async (row) => {
