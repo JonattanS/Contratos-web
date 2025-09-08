@@ -72,7 +72,7 @@ export const Dashboard = () => {
 
   const sendNotificationsFromExcel = async () => {
   try {
-    const response = await fetch('http://10.11.11.246:3002/api/notifications/send-from-excel', {
+    const response = await fetch('http://10.11.11.246:3002/api/notifications/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });

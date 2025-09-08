@@ -3,22 +3,40 @@ const router = express.Router();
 const fetch = require('node-fetch'); // o usa undici nativo si tienes Node 18+
 const XLSX = require('xlsx');
 const path = require('path');
-const EXCEL_TEMP_PATH = path.join(__dirname, '..', 'Temp', 'tmpe2wq3gzr.xlsx');
 
+const EXCEL_TEMP_PATH = path.join(__dirname, '..', 'Temp', 'tmpe2wq3gzr.xlsx');
 const NOTIFICATIONS_API = 'http://10.11.11.5:8083/api/notifications/send';
 
-// Nuevo endpoint para leer Excel temporal y enviar notificaciones masivamente
-router.post('/notifications/send-from-excel', async (req, res) => {
+// Funcionalidad antigua comentada intencionalmente
+// router.post('/notifications/send', async (req, res) => {
+//   try {
+//     const response = await fetch(NOTIFICATIONS_API, {
+//       method: 'POST',
+//       headers: { 'Content-Type': 'application/json' },
+//       body: JSON.stringify(req.body),
+//     });
+//     const data = await response.text();
+//     res.status(response.status).send(data);
+//   } catch (error) {
+//     console.error('Error proxy notifications:', error);
+//     res.status(500).json({ error: 'Error en proxy de notificaciones' });
+//   }
+// });
+
+// Nuevo endpoint que lee Excel y envía notificaciones
+router.post('/notifications/send', async (req, res) => {
   try {
+    // Leer archivo Excel
     const workbook = XLSX.readFile(EXCEL_TEMP_PATH);
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
 
-    // Leer desde la fila 2 (range: 1) para saltar encabezados
+    // Leer datos desde fila 2 (range: 1) saltando encabezados
     const jsonData = XLSX.utils.sheet_to_json(worksheet, { range: 1, defval: '' });
 
+    // Procesar todas las filas y enviar notificaciones en paralelo
     const sendResults = await Promise.all(jsonData.map(async (row) => {
-      // Ajustar los nombres de columna según archivo Excel
+      // Obtener destinatario y correos copia desde columnas
       const recipient = row['Correo electronico'] || row['Correo Electrónico'] || '';
       const ccStr = row['Correos copia'] || '';
       const cc = ccStr ? ccStr.split(',').map(s => s.trim()).filter(Boolean) : [];
@@ -27,7 +45,7 @@ router.post('/notifications/send-from-excel', async (req, res) => {
         return { success: false, error: 'Falta correo destinatario', row };
       }
 
-      // Payload estático para subject y message como requieres
+      // Construir payload con asunto y mensaje estáticos
       const payload = {
         channels: ['email'],
         recipient: recipient,
@@ -36,7 +54,7 @@ router.post('/notifications/send-from-excel', async (req, res) => {
         message: 'Mensaje estático de prueba',
       };
 
-      // Enviar la notificación al backend especificado
+      // Ejecutar fetch a API externa
       const response = await fetch(NOTIFICATIONS_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -52,10 +70,11 @@ router.post('/notifications/send-from-excel', async (req, res) => {
       };
     }));
 
+    // Retornar resultados al cliente
     res.json({ results: sendResults });
   } catch (error) {
     console.error('Error enviando notificaciones desde Excel:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    res.status(500).json({ error: 'Error interno del servidor', detail: error.message });
   }
 });
 
