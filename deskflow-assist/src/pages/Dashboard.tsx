@@ -70,6 +70,34 @@ export const Dashboard = () => {
     }
   };
 
+  const sendNotificationsFromExcel = async () => {
+  try {
+    const response = await fetch('http://10.11.11.246:3002/api/notifications/send-from-excel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('Resultados envío:', data);
+
+      toast({
+        title: 'Notificaciones enviadas',
+        description: `Se enviaron ${data.results.filter(r => r.success).length} notificaciones.`,
+      });
+    } else {
+      const errorText = await response.text();
+      throw new Error(errorText);
+    }
+  } catch (err: any) {
+    toast({
+      title: 'Error al enviar notificaciones',
+      description: err.message || 'Error desconocido',
+      variant: 'destructive',
+    });
+  }
+};
+
   const services = [
     {
       title: "Generar Comunicados",
@@ -90,7 +118,7 @@ export const Dashboard = () => {
       description: "Accede al sistema de notificaciones integrado con Amazon QA para automatizar alertas y recordatorios.",
       icon: Bell,
       variant: "accent" as const,
-      onClick: () => setActiveView("notifications")
+      onClick: sendNotificationsFromExcel
     }
   ];
 
