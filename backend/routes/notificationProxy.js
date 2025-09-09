@@ -4,7 +4,7 @@ const fetch = require('node-fetch');
 const XLSX = require('xlsx');
 const path = require('path');
 
-const EXCEL_TEMP_PATH = path.join(__dirname, '..', 'Temp', 'tmpekdiqrhl.xlsx');
+const EXCEL_TEMP_PATH = path.join(__dirname, '..', 'Temp', 'excel_clientes_temp.xlsx');
 const NOTIFICATIONS_API = 'http://10.11.11.5:8083/api/notifications/send';
 
 // Funcionalidad antigua comentada intencionalmente
