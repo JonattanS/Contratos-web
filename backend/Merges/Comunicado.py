@@ -468,12 +468,13 @@ def convert_documents_to_pdf():
 convert_documents_to_pdf()
 
 # Limpiar archivos temporales
-if temp_excel_path:
-    try:
-        os.unlink(temp_excel_path)
-        print(f"[INFO] Archivo temporal Excel eliminado: {temp_excel_path}")
-    except Exception as e:
-        print(f"[WARNING] No se pudo eliminar archivo temporal Excel: {e}")
+# Mantener Excel temporal para notificaciones
+# if temp_excel_path:
+#     try:
+#         os.unlink(temp_excel_path)
+#         print(f"[INFO] Archivo temporal Excel eliminado: {temp_excel_path}")
+#     except Exception as e:
+#         print(f"[WARNING] No se pudo eliminar archivo temporal Excel: {e}")
 
 if TEMPLATE_PATH:
     try:
