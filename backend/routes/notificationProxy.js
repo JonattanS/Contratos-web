@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const fetch = require('node-fetch'); // o usa undici nativo si tienes Node 18+
+const fetch = require('node-fetch');
 const XLSX = require('xlsx');
 const path = require('path');
 
@@ -23,15 +23,69 @@ const NOTIFICATIONS_API = 'http://10.11.11.5:8083/api/notifications/send';
 //   }
 // });
 
+// Función para generar el contenido según el tipo
+function getEmailContent(type, clientName, link) {
+  if (type === 'comunicado') {
+    return {
+      subject: 'CIERRE DE AÑO: Información Importante',
+      message: `Apreciado Cliente ${clientName}
+
+En siguiente enlace ${link} encuentra información de alto impacto, nuestro interés seguir construyendo lazos.
+Estaremos atentos a sus comentarios.
+
+Cordialmente,
+Dora Rodríguez Romero
+Asistente Comercial
+Nova Corp SAS
+PBX (57) 601 7568230 | 3164352921
+Calle 25F No. 85B-26 P.5
+Bogotá, Colombia 
+www.novacorp-plus.com`
+    };
+  } else if (type === 'cotizacion') {
+    return {
+      subject: 'Continuidad Servicios 2026',
+      message: `Estimado Cliente EMPRESA ${clientName}
+
+Atendiendo el asunto citado, anexamos los documentos pertinentes,
+${link}
+
+A la espera de su confirmación del recibido.
+
+Cordialmente,
+Dora Rodríguez Romero
+Asistente Comercial
+Nova Corp SAS
+PBX (57) 601 7568230 | 3164352921
+Calle 25F No. 85B-26 P.5
+Bogotá, Colombia 
+www.novacorp-plus.com`
+    };
+  }
+  
+  // Fallback por si no se especifica tipo
+  return {
+    subject: 'Información Importante',
+    message: 'Mensaje genérico'
+  };
+}
+
 // Nuevo endpoint que lee Excel y envía notificaciones
 router.post('/notifications/send', async (req, res) => {
   try {
+    // Obtener el tipo desde el body
+    const { type } = req.body;
+    
+    if (!type || !['comunicado', 'cotizacion'].includes(type)) {
+      return res.status(400).json({ error: 'Tipo de notificación requerido: comunicado o cotizacion' });
+    }
+
     // Leer archivo Excel
     const workbook = XLSX.readFile(EXCEL_TEMP_PATH);
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
 
-    // Leer datos desde fila 2 (range: 1) saltando encabezados
+    // Leer datos desde fila 1 (range: 0) incluyendo encabezados
     const jsonData = XLSX.utils.sheet_to_json(worksheet, { range: 0, defval: '' });
 
     // Procesar todas las filas y enviar notificaciones en paralelo
@@ -40,18 +94,27 @@ router.post('/notifications/send', async (req, res) => {
       const recipient = row['Correo electronico'] || row['Correo Electrónico'] || '';
       const ccStr = row['Correos copia'] || '';
       const cc = ccStr ? ccStr.split(',').map(s => s.trim()).filter(Boolean) : [];
+      
+      // Obtener datos específicos para el contenido
+      const clientName = row['Razón social'] || 'Cliente';
+      const link = type === 'comunicado' 
+        ? (row['Link_PDF_Comunicado'] || row['Link_Comunicado'] || '#')
+        : (row['Link_PDF_Renovacion'] || row['Link_Renovacion'] || '#');
 
       if (!recipient) {
         return { success: false, error: 'Falta correo destinatario', row };
       }
 
-      // Construir payload con asunto y mensaje estáticos
+      // Generar contenido según tipo
+      const emailContent = getEmailContent(type, clientName, link);
+
+      // Construir payload con contenido personalizado
       const payload = {
         channels: ['email'],
         recipient: recipient,
         cc: cc,
-        subject: 'Asunto estático de prueba',
-        message: 'Mensaje estático de prueba',
+        subject: emailContent.subject,
+        message: emailContent.message,
       };
 
       // Ejecutar fetch a API externa
@@ -67,6 +130,8 @@ router.post('/notifications/send', async (req, res) => {
         status: response.status,
         response: text,
         recipient,
+        clientName,
+        type,
       };
     }));
 
