@@ -11,7 +11,8 @@ router.post('/ejecutar-cotizacion', (req, res) => {
 
     try {
         // Ejecutar el script usando Python y asegurar cwd en Merges
-        const proceso = spawn('python3', [scriptPath], { cwd: mergesPath });
+        const pythonPath = 'C:\\Program Files\\Python313\\python.exe';
+        const proceso = spawn(pythonPath, [scriptPath], { cwd: mergesPath });
 
         let output = '';
         let errorOutput = '';
