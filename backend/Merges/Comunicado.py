@@ -370,7 +370,7 @@ for idx, row in df.iterrows():
     reemplazar_etiquetas(doc, row.to_dict())
 
     # Guardar documento
-    nombre_archivo = f"Comunicado_{datetime.now().year}_{nit}.docx"
+    nombre_archivo = f"COMUNICADO_{datetime.now().year}_{nit}.docx"
     
     # Siempre subir a OneDrive
     with tempfile.NamedTemporaryFile(delete=False, suffix='.docx') as temp_file:

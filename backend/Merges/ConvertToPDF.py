@@ -40,7 +40,7 @@ def get_access_token():
 
 def get_all_word_documents(access_token, folder_path):
     """Obtener todos los documentos Word de una carpeta en OneDrive"""
-    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'mcanas@novacorp-plus.com')
+    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'servicioalcliente@novacorp-plus.com')
     headers = {'Authorization': f'Bearer {access_token}'}
     
     # Buscar en la carpeta especificada
@@ -72,7 +72,7 @@ def get_all_word_documents(access_token, folder_path):
 
 def convert_word_to_pdf(access_token, file_id, file_name, file_folder):
     """Convertir un documento Word a PDF y guardarlo en la misma carpeta"""
-    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'mcanas@novacorp-plus.com')
+    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'servicioalcliente@novacorp-plus.com')
     headers = {'Authorization': f'Bearer {access_token}'}
     
     # URL para convertir a PDF
@@ -105,7 +105,7 @@ def convert_word_to_pdf(access_token, file_id, file_name, file_folder):
 
 def get_onedrive_link(file_path, access_token):
     """Obtener link compartible de OneDrive para un archivo"""
-    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'mcanas@novacorp-plus.com')
+    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'servicioalcliente@novacorp-plus.com')
     headers = {'Authorization': f'Bearer {access_token}'}
     
     file_url = f"https://graph.microsoft.com/v1.0/users/{user_email}/drive/root:/{file_path}"
@@ -118,7 +118,7 @@ def get_onedrive_link(file_path, access_token):
 
 def download_and_update_excel(access_token):
     """Descargar Excel desde OneDrive para actualizar"""
-    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'mcanas@novacorp-plus.com')
+    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'servicioalcliente@novacorp-plus.com')
     headers = {'Authorization': f'Bearer {access_token}'}
     
     # Buscar Excel en Documentos_Merge
@@ -154,7 +154,7 @@ def download_and_update_excel(access_token):
 
 def upload_excel_to_onedrive(access_token, temp_excel_path):
     """Subir Excel actualizado de vuelta a OneDrive"""
-    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'mcanas@novacorp-plus.com')
+    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'servicioalcliente@novacorp-plus.com')
     headers = {'Authorization': f'Bearer {access_token}'}
     
     # Obtener nombre del Excel original
