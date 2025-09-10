@@ -444,14 +444,17 @@ def convert_documents_to_pdf():
                 mask = df[nit_column].astype(str) == str(nit)
                 
                 if mask.any():
-                    if 'Link_Comunicado' not in df.columns:
-                        df['Link_Comunicado'] = ''
+                    if 'Link_PDF_Comunicado' not in df.columns:
+                        df['Link_PDF_Comunicado'] = ''
+                    
+                    # Crear ruta del PDF (reemplazar .docx por .pdf)
+                    pdf_path = word_file['path'].replace('.docx', '.pdf')
                     
                     # Crear link público para el PDF
-                    public_link = create_public_sharing_link(word_file['path'], access_token)
+                    public_link = create_public_sharing_link(pdf_path, access_token)
                     final_link = public_link if public_link else pdf_link
                     
-                    df.loc[mask, 'Link_Comunicado'] = final_link
+                    df.loc[mask, 'Link_PDF_Comunicado'] = final_link
                     print(f"[INFO] Link PDF actualizado para NIT {nit}")
         
         time.sleep(0.5)  # Pausa para evitar límites de API
