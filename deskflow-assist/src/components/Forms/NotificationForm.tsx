@@ -81,7 +81,7 @@ export const NotificationForm = ({ onBack }: NotificationFormProps) => {
 
   const sendPayload = async (payload: any) => {
     try {
-      const response = await fetch('http://10.11.11.246:3002/api/notifications/send', {
+      const response = await fetch('http://10.11.11.131:3002/api/notifications/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

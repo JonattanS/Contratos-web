@@ -6,20 +6,15 @@ import { DocumentForm } from "@/components/Forms/DocumentForm";
 import { QuoteForm } from "@/components/Forms/QuoteForm";
 import { NotificationForm } from "@/components/Forms/NotificationForm";
 import { toast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type ActiveView = "dashboard" | "documents" | "quotes" | "notifications";
 
 export const Dashboard = () => {
   const [activeView, setActiveView] = useState<ActiveView>("dashboard");
-  const [showNotificationModal, setShowNotificationModal] = useState(false);
-  const [notificationType, setNotificationType] = useState<"comunicado" | "cotizacion" | "">("");
 
   const executePythonScript = async () => {
     try {
-      const response = await fetch('http://10.11.11.246:3002/api/ejecutar-comunicado', {
+      const response = await fetch('http://10.11.11.131:3002/api/ejecutar-comunicado', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -48,7 +43,7 @@ export const Dashboard = () => {
 
   const executeRenovacionScript = async () => {
     try {
-      const response = await fetch('http://10.11.11.246:3002/api/ejecutar-cotizacion', {
+      const response = await fetch('http://10.11.11.131:3002/api/ejecutar-cotizacion', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -76,50 +71,32 @@ export const Dashboard = () => {
   };
 
   const sendNotificationsFromExcel = async () => {
-    if (!notificationType) {
+  try {
+    const response = await fetch('http://10.11.11.131:3002/api/notifications/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('Resultados envío:', data);
+
       toast({
-        title: "Selección requerida",
-        description: "Por favor selecciona el tipo de notificación.",
-        variant: "destructive",
+        title: 'Notificaciones enviadas',
+        description: `Se enviaron ${data.results.filter(r => r.success).length} notificaciones.`,
       });
-      return;
+    } else {
+      const errorText = await response.text();
+      throw new Error(errorText);
     }
-
-    try {
-      const response = await fetch('http://10.11.11.246:3002/api/notifications/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: notificationType }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Resultados envío:', data);
-
-        toast({
-          title: 'Notificaciones enviadas',
-          description: `Se enviaron ${data.results.filter((r: any) => r.success).length} notificaciones.`,
-        });
-        
-        // Cerrar modal y limpiar selección
-        setShowNotificationModal(false);
-        setNotificationType("");
-      } else {
-        const errorText = await response.text();
-        throw new Error(errorText);
-      }
-    } catch (err: any) {
-      toast({
-        title: 'Error al enviar notificaciones',
-        description: err.message || 'Error desconocido',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleNotificationClick = () => {
-    setShowNotificationModal(true);
-  };
+  } catch (err: any) {
+    toast({
+      title: 'Error al enviar notificaciones',
+      description: err.message || 'Error desconocido',
+      variant: 'destructive',
+    });
+  }
+};
 
   const services = [
     {
@@ -141,7 +118,7 @@ export const Dashboard = () => {
       description: "Accede al sistema de notificaciones integrado con Amazon QA para automatizar alertas y recordatorios.",
       icon: Bell,
       variant: "accent" as const,
-      onClick: handleNotificationClick
+      onClick: sendNotificationsFromExcel
     }
   ];
 
@@ -196,48 +173,6 @@ export const Dashboard = () => {
                 </div>
               </div>
             </div>
-
-            {/* Modal de selección de tipo de notificación */}
-            {showNotificationModal && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <Card className="w-96">
-                  <CardHeader>
-                    <CardTitle>Seleccionar Tipo de Notificación</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <Select value={notificationType} onValueChange={(value: "comunicado" | "cotizacion") => setNotificationType(value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona el tipo de notificación" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="comunicado">Comunicado</SelectItem>
-                        <SelectItem value="cotizacion">Cotización</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    
-                    <div className="flex space-x-2">
-                      <Button 
-                        variant="outline" 
-                        className="flex-1"
-                        onClick={() => {
-                          setShowNotificationModal(false);
-                          setNotificationType("");
-                        }}
-                      >
-                        Cancelar
-                      </Button>
-                      <Button 
-                        className="flex-1"
-                        onClick={sendNotificationsFromExcel}
-                        disabled={!notificationType}
-                      >
-                        Enviar
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
           </div>
         );
     }
