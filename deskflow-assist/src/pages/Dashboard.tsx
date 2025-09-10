@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileText, Calculator, Bell } from "lucide-react";
+import { FileText, Calculator, Bell, Loader2 } from "lucide-react";
 import { Header } from "@/components/Layout/Header";
 import { ServiceCard } from "@/components/Dashboard/ServiceCard";
 import { DocumentForm } from "@/components/Forms/DocumentForm";
@@ -9,6 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 type ActiveView = "dashboard" | "documents" | "quotes" | "notifications";
 
@@ -16,8 +17,25 @@ export const Dashboard = () => {
   const [activeView, setActiveView] = useState<ActiveView>("dashboard");
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [notificationType, setNotificationType] = useState<"comunicado" | "cotizacion" | "">("");
+  const [loading, setLoading] = useState({
+    comunicado: false,
+    cotizacion: false,
+    notificaciones: false
+  });
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+
+  // Función para mostrar modal de éxito persistente
+  const showPersistentSuccess = (message: string) => {
+    setSuccessMessage(message);
+    setShowSuccessModal(true);
+  };
 
   const executePythonScript = async () => {
+    if (Object.values(loading).some(l => l)) return; // Prevenir múltiples solicitudes
+    
+    setLoading(prev => ({ ...prev, comunicado: true }));
+    
     try {
       const response = await fetch('http://10.11.11.246:3002/api/ejecutar-comunicado', {
         method: 'POST',
@@ -29,10 +47,7 @@ export const Dashboard = () => {
       if (response.ok) {
         const result = await response.text();
         console.log('Comunicado.py ejecutado:', result);
-        toast({
-          title: "Ejecución Exitosa",
-          description: "Documentos generados exitosamente.",
-        });
+        showPersistentSuccess("Documentos comunicados generados exitosamente.");
       } else {
         throw new Error('Error al ejecutar el programa');
       }
@@ -43,10 +58,16 @@ export const Dashboard = () => {
         description: "No se pudo ejecutar Comunicado.py. Verifica que el servidor esté activo.",
         variant: "destructive",
       });
+    } finally {
+      setLoading(prev => ({ ...prev, comunicado: false }));
     }
   };
 
   const executeRenovacionScript = async () => {
+    if (Object.values(loading).some(l => l)) return; // Prevenir múltiples solicitudes
+    
+    setLoading(prev => ({ ...prev, cotizacion: true }));
+    
     try {
       const response = await fetch('http://10.11.11.246:3002/api/ejecutar-cotizacion', {
         method: 'POST',
@@ -58,10 +79,7 @@ export const Dashboard = () => {
       if (response.ok) {
         const result = await response.text();
         console.log('Renovacion1.py ejecutado:', result);
-        toast({
-          title: "Renovación Exitosa",
-          description: "Documentos generados exitosamente.",
-        });
+        showPersistentSuccess("Documentos cotizaciones generados exitosamente.");
       } else {
         throw new Error('Error al ejecutar el programa');
       }
@@ -72,6 +90,8 @@ export const Dashboard = () => {
         description: "No se pudo ejecutar Renovacion1.py. Verifica que el servidor esté activo.",
         variant: "destructive",
       });
+    } finally {
+      setLoading(prev => ({ ...prev, cotizacion: false }));
     }
   };
 
@@ -85,6 +105,10 @@ export const Dashboard = () => {
       return;
     }
 
+    if (Object.values(loading).some(l => l)) return; // Prevenir múltiples solicitudes
+    
+    setLoading(prev => ({ ...prev, notificaciones: true }));
+    
     try {
       const response = await fetch('http://10.11.11.246:3002/api/notifications/send', {
         method: 'POST',
@@ -95,11 +119,7 @@ export const Dashboard = () => {
       if (response.ok) {
         const data = await response.json();
         console.log('Resultados envío:', data);
-
-        toast({
-          title: 'Notificaciones enviadas',
-          description: `Se enviaron ${data.results.filter((r: any) => r.success).length} notificaciones.`,
-        });
+        showPersistentSuccess(`Se enviaron ${data.results.filter((r: any) => r.success).length} notificaciones exitosamente.`);
         
         // Cerrar modal y limpiar selección
         setShowNotificationModal(false);
@@ -114,10 +134,13 @@ export const Dashboard = () => {
         description: err.message || 'Error desconocido',
         variant: 'destructive',
       });
+    } finally {
+      setLoading(prev => ({ ...prev, notificaciones: false }));
     }
   };
 
   const handleNotificationClick = () => {
+    if (Object.values(loading).some(l => l)) return; // Prevenir si hay otra operación en curso
     setShowNotificationModal(true);
   };
 
@@ -125,23 +148,29 @@ export const Dashboard = () => {
     {
       title: "Generar Comunicados",
       description: "Ejecuta el programa Comunicado.py para generar documentos oficiales.",
-      icon: FileText,
+      icon: loading.comunicado ? Loader2 : FileText,
       variant: "primary" as const,
-      onClick: executePythonScript
+      onClick: executePythonScript,
+      loading: loading.comunicado,
+      disabled: Object.values(loading).some(l => l)
     },
     {
       title: "Generar Cotizaciones",
       description: "Ejecuta el programa Renovacion1.py para generar cotizaciones y renovaciones.",
-      icon: Calculator,
+      icon: loading.cotizacion ? Loader2 : Calculator,
       variant: "secondary" as const,
-      onClick: executeRenovacionScript
+      onClick: executeRenovacionScript,
+      loading: loading.cotizacion,
+      disabled: Object.values(loading).some(l => l)
     },
     {
       title: "Notificaciones Automatizadas",
       description: "Accede al sistema de notificaciones integrado con Amazon QA para automatizar alertas y recordatorios.",
-      icon: Bell,
+      icon: loading.notificaciones ? Loader2 : Bell,
       variant: "accent" as const,
-      onClick: handleNotificationClick
+      onClick: handleNotificationClick,
+      loading: loading.notificaciones,
+      disabled: Object.values(loading).some(l => l)
     }
   ];
 
@@ -223,21 +252,46 @@ export const Dashboard = () => {
                           setShowNotificationModal(false);
                           setNotificationType("");
                         }}
+                        disabled={loading.notificaciones}
                       >
                         Cancelar
                       </Button>
                       <Button 
                         className="flex-1"
                         onClick={sendNotificationsFromExcel}
-                        disabled={!notificationType}
+                        disabled={!notificationType || loading.notificaciones}
                       >
-                        Enviar
+                        {loading.notificaciones ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Enviando...
+                          </>
+                        ) : (
+                          "Enviar"
+                        )}
                       </Button>
                     </div>
                   </CardContent>
                 </Card>
               </div>
             )}
+
+            {/* Modal de éxito persistente */}
+            <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>¡Operación Completada!</DialogTitle>
+                  <DialogDescription>
+                    {successMessage}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex justify-end">
+                  <Button onClick={() => setShowSuccessModal(false)}>
+                    Entendido
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         );
     }

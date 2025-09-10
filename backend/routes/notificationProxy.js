@@ -51,7 +51,7 @@ www.novacorp-plus.com`
       subject: 'Continuidad Servicios 2026',
       message: `Estimado Cliente ${clientName}
 
-atendiendo en el asunto citado, en el siguiente enlace encuentra los documentos pertinentes:
+Buen día, atendiendo en el asunto citado, en el siguiente enlace encuentra los documentos pertinentes:
 
 ${link}
 
