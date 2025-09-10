@@ -384,9 +384,9 @@ for idx, row in df.iterrows():
             uploader.create_folder(folder_path)
             uploader.upload_file(temp_file.name, folder_path, nombre_archivo)
             
-            # Actualizar Excel con link del Word
+            # Actualizar Excel con link público del Word
             word_path = f"{folder_path}/{nombre_archivo}"
-            word_link = get_onedrive_link(word_path, access_token)
+            word_link = create_public_sharing_link(word_path, access_token)
             
             if word_link:
                 nit_column = df.columns[0]
@@ -397,7 +397,7 @@ for idx, row in df.iterrows():
                         df['Link_Comunicado'] = ''
                     
                     df.loc[mask, 'Link_Comunicado'] = word_link
-                    print(f"[INFO] Link Word actualizado para NIT {nit}")
+                    print(f"[INFO] Link Word público actualizado para NIT {nit}")
             
             print(f"[INFO] Documento Word generado para NIT {nit}")
 
@@ -407,11 +407,67 @@ for idx, row in df.iterrows():
         except Exception as e:
             print(f"[WARNING] No se pudo eliminar archivo temporal: {e}")
 
-# Guardar Excel actualizado con links de Word
+def convert_documents_to_pdf():
+    """Convertir todos los documentos Word generados a PDF"""
+    if not all([get_all_word_documents, convert_word_to_pdf, extract_nit_from_filename]):
+        print("[WARNING] Funciones de conversión PDF no disponibles")
+        return
+    
+    print("\n[INFO] Iniciando conversión de documentos a PDF...")
+    
+    access_token = get_access_token()
+    if not access_token:
+        print("[ERROR] No se pudo obtener token para conversión PDF")
+        return
+    
+    carpeta = "Documentos_Generados/Comunicados"
+    word_files = get_all_word_documents(access_token, carpeta)
+    
+    if not word_files:
+        print(f"[INFO] No se encontraron documentos Word en {carpeta}")
+        return
+    
+    print(f"[INFO] Encontrados {len(word_files)} documentos para convertir")
+    
+    for word_file in word_files:
+        file_folder = "/".join(word_file['path'].split("/")[:-1])
+        
+        pdf_link = convert_word_to_pdf(
+            access_token, 
+            word_file['id'], 
+            word_file['name'], 
+            file_folder
+        )
+        
+        if pdf_link:
+            nit = extract_nit_from_filename(word_file['name'], "Comunicados")
+            
+            if nit and temp_excel_path:
+                nit_column = df.columns[0]
+                mask = df[nit_column].astype(str) == str(nit)
+                
+                if mask.any():
+                    if 'Link_PDF_Comunicado' not in df.columns:
+                        df['Link_PDF_Comunicado'] = ''
+                    
+                    # Crear ruta del PDF y link público
+                    pdf_path = word_file['path'].replace('.docx', '.pdf')
+                    public_pdf_link = create_public_sharing_link(pdf_path, access_token)
+                    final_link = public_pdf_link if public_pdf_link else pdf_link
+                    
+                    df.loc[mask, 'Link_PDF_Comunicado'] = final_link
+                    print(f"[INFO] Link PDF público actualizado para NIT {nit}")
+        
+        time.sleep(0.5)
+
+# Convertir documentos a PDF
+convert_documents_to_pdf()
+
+# Guardar Excel actualizado con ambos links
 if temp_excel_path:
     df.to_excel(temp_excel_path, index=False, engine='openpyxl')
     upload_excel_to_onedrive()
-    print("[INFO] Excel actualizado con links de Word")
+    print("[INFO] Excel actualizado con links de Word y PDF")
 
 # Limpiar archivos temporales
 # Mantener Excel temporal para notificaciones
