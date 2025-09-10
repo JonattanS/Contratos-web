@@ -30,11 +30,15 @@ function getEmailContent(type, clientName, link) {
       subject: 'CIERRE DE AÑO: Información Importante',
       message: `Apreciado Cliente ${clientName}
 
-En siguiente enlace ${link} encuentra información de alto impacto, nuestro interés seguir construyendo lazos.
+Buen día, En siguiente enlace encontrara información de alto impacto, nuestro interés seguir construyendo lazos.
+
+${link}
+
 Estaremos atentos a sus comentarios.
 
 Cordialmente,
 Dora Rodríguez Romero
+servicioalcliente@novacorp-plus.com
 Asistente Comercial
 Nova Corp SAS
 PBX (57) 601 7568230 | 3164352921
@@ -45,15 +49,17 @@ www.novacorp-plus.com`
   } else if (type === 'cotizacion') {
     return {
       subject: 'Continuidad Servicios 2026',
-      message: `Estimado Cliente EMPRESA ${clientName}
+      message: `Estimado Cliente ${clientName}
 
-Atendiendo el asunto citado, anexamos los documentos pertinentes,
+atendiendo en el asunto citado, en el siguiente enlace encuentra los documentos pertinentes:
+
 ${link}
 
 A la espera de su confirmación del recibido.
 
 Cordialmente,
 Dora Rodríguez Romero
+servicioalcliente@novacorp-plus.com
 Asistente Comercial
 Nova Corp SAS
 PBX (57) 601 7568230 | 3164352921
