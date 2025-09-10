@@ -28,44 +28,45 @@ function getEmailContent(type, clientName, link) {
   if (type === 'comunicado') {
     return {
       subject: 'CIERRE DE AÑO: Información Importante',
-      message: `Apreciado Cliente ${clientName}
+      message: `Apreciado Cliente ${clientName} Buen día, 
+      
+      En el siguiente enlace encontrara información de alto impacto, nuestro interés seguir construyendo lazos.
 
-Buen día, En siguiente enlace encontrara información de alto impacto, nuestro interés seguir construyendo lazos.
+      ${link}
 
-${link}
+      Estaremos atentos a sus comentarios.
 
-Estaremos atentos a sus comentarios.
-
-Cordialmente,
-Dora Rodríguez Romero
-servicioalcliente@novacorp-plus.com
-Asistente Comercial
-Nova Corp SAS
-PBX (57) 601 7568230 | 3164352921
-Calle 25F No. 85B-26 P.5
-Bogotá, Colombia 
-www.novacorp-plus.com`
+      Cordialmente,
+      Dora Rodríguez Romero
+      servicioalcliente@novacorp-plus.com
+      Asistente Comercial
+      Nova Corp SAS
+      PBX (57) 601 7568230 | 3164352921
+      Calle 25F No. 85B-26 P.5
+      Bogotá, Colombia 
+      www.novacorp-plus.com`
     };
   } else if (type === 'cotizacion') {
     return {
       subject: 'Continuidad Servicios 2026',
       message: `Estimado Cliente ${clientName}
 
-Buen día, atendiendo en el asunto citado, en el siguiente enlace encuentra los documentos pertinentes:
+      Buen día, 
+      atendiendo el asunto citado, en el siguiente enlace encuentra los documentos pertinentes:
 
-${link}
+      ${link}
 
-A la espera de su confirmación del recibido.
+      A la espera de su confirmación del recibido.
 
-Cordialmente,
-Dora Rodríguez Romero
-servicioalcliente@novacorp-plus.com
-Asistente Comercial
-Nova Corp SAS
-PBX (57) 601 7568230 | 3164352921
-Calle 25F No. 85B-26 P.5
-Bogotá, Colombia 
-www.novacorp-plus.com`
+      Cordialmente,
+      Dora Rodríguez Romero
+      servicioalcliente@novacorp-plus.com
+      Asistente Comercial
+      Nova Corp SAS
+      PBX (57) 601 7568230 | 3164352921
+      Calle 25F No. 85B-26 P.5
+      Bogotá, Colombia 
+      www.novacorp-plus.com`
     };
   }
   
@@ -97,9 +98,10 @@ router.post('/notifications/send', async (req, res) => {
     // Procesar todas las filas y enviar notificaciones en paralelo
     const sendResults = await Promise.all(jsonData.map(async (row) => {
       // Obtener destinatario y correos copia desde columnas
-      const recipient = row['Correo electronico'] || row['Correo Electrónico'] || '';
+      const rawRecipient = row['Correo electronico'] || row['Correo Electrónico'] || '';
+      const recipient = rawRecipient.trim() || 'servicioalcliente@novacorp-plus.com';
       const ccStr = row['Correos copia'] || '';
-      const cc = ccStr ? ccStr.split(',').map(s => s.trim()).filter(Boolean) : [];
+      const cc = ccStr.split(',').map(s => s.trim()).filter(Boolean);
       
       // Obtener datos específicos para el contenido
       const clientName = row['Razón social'] || 'Cliente';
@@ -107,18 +109,14 @@ router.post('/notifications/send', async (req, res) => {
         ? (row['Link_PDF_Comunicado'] || row['Link_Comunicado'] || '#')
         : (row['Link_PDF_Renovacion'] || row['Link_Renovacion'] || '#');
 
-      if (!recipient) {
-        return { success: false, error: 'Falta correo destinatario', row };
-      }
-
       // Generar contenido según tipo
       const emailContent = getEmailContent(type, clientName, link);
 
       // Construir payload con contenido personalizado
       const payload = {
         channels: ['email'],
-        recipient: recipient,
-        cc: cc,
+        recipient,
+        cc,
         subject: emailContent.subject,
         message: emailContent.message,
       };

@@ -202,6 +202,8 @@ export const Dashboard = () => {
                   icon={service.icon}
                   variant={service.variant}
                   onClick={service.onClick}
+                  loading={service.loading}
+                  disabled={service.disabled}
                 />
               ))}
             </div>
