@@ -28,45 +28,43 @@ function getEmailContent(type, clientName, link) {
   if (type === 'comunicado') {
     return {
       subject: 'CIERRE DE AÑO: Información Importante',
-      message: `Apreciado Cliente ${clientName} Buen día, 
+      message: `Apreciado Cliente ${clientName} buen día, 
       
-      En el siguiente enlace encontrara información de alto impacto, nuestro interés seguir construyendo lazos.
+En el siguiente enlace encuentra información de alto impacto, nuestro interés seguir construyendo lazos.
 
-      ${link}
+${link}
 
-      Estaremos atentos a sus comentarios.
+Estaremos atentos a sus comentarios.
 
-      Cordialmente,
-      Dora Rodríguez Romero
-      servicioalcliente@novacorp-plus.com
-      Asistente Comercial
-      Nova Corp SAS
-      PBX (57) 601 7568230 | 3164352921
-      Calle 25F No. 85B-26 P.5
-      Bogotá, Colombia 
-      www.novacorp-plus.com`
+Cordialmente,
+Dora Rodríguez Romero
+Asistente Comercial
+Nova Corp SAS
+PBX (57) 601 7568230 | 3164352921
+Calle 25F No. 85B-26 P.5
+Bogotá, Colombia 
+www.novacorp-plus.com`
     };
   } else if (type === 'cotizacion') {
     return {
       subject: 'Continuidad Servicios 2026',
-      message: `Estimado Cliente ${clientName}
+      message: `Estimado Cliente ${clientName} buen día, 
 
-      Buen día, 
-      atendiendo el asunto citado, en el siguiente enlace encuentra los documentos pertinentes:
+Atendiendo el asunto citado, en el siguiente enlace encuentra los documentos pertinentes:
 
-      ${link}
+${link}
 
-      A la espera de su confirmación del recibido.
+A la espera de su confirmación del recibido.
 
-      Cordialmente,
-      Dora Rodríguez Romero
-      servicioalcliente@novacorp-plus.com
-      Asistente Comercial
-      Nova Corp SAS
-      PBX (57) 601 7568230 | 3164352921
-      Calle 25F No. 85B-26 P.5
-      Bogotá, Colombia 
-      www.novacorp-plus.com`
+Cordialmente,
+Dora Rodríguez Romero
+servicioalcliente@novacorp-plus.com
+Asistente Comercial
+Nova Corp SAS
+PBX (57) 601 7568230 | 3164352921
+Calle 25F No. 85B-26 P.5
+Bogotá, Colombia 
+www.novacorp-plus.com`
     };
   }
   
