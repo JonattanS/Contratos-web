@@ -38,6 +38,7 @@ Estaremos atentos a sus comentarios.
 
 Cordialmente,
 Dora Rodríguez Romero
+servicioalcliente@novacorp-plus.com
 Asistente Comercial
 Nova Corp SAS
 PBX (57) 601 7568230 | 3164352921
@@ -50,7 +51,10 @@ www.novacorp-plus.com`
       subject: 'Continuidad Servicios 2026',
       message: `Estimado Cliente ${clientName} buen día, 
 
-Atendiendo el asunto citado, en el siguiente enlace encuentra los documentos pertinentes:
+Atendiendo el asunto citado, en el siguiente enlace encuentra los documentos:
+
+  • Propuesta Renovación Servicios.
+ 	• Paquete Documentos Legales.
 
 ${link}
 
