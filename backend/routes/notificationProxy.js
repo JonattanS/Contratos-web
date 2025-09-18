@@ -54,7 +54,7 @@ www.novacorp-plus.com`
 Atendiendo el asunto citado, en el siguiente enlace encuentra los documentos:
 
   • Propuesta Renovación Servicios.
- 	• Paquete Documentos Legales.
+  • Paquete Documentos Legales.
 
 ${link}
 
