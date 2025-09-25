@@ -38,9 +38,9 @@ Estaremos atentos a sus comentarios.
 
 Cordialmente,
 Dora Rodríguez Romero
-servicioalcliente@novacorp-plus.com
 Asistente Comercial
 Nova Corp SAS
+servicioalcliente@novacorp-plus.com
 PBX (57) 601 7568230 | 3164352921
 Calle 25F No. 85B-26 P.5
 Bogotá, Colombia 
@@ -62,9 +62,9 @@ A la espera de su confirmación del recibido.
 
 Cordialmente,
 Dora Rodríguez Romero
-servicioalcliente@novacorp-plus.com
 Asistente Comercial
 Nova Corp SAS
+servicioalcliente@novacorp-plus.com
 PBX (57) 601 7568230 | 3164352921
 Calle 25F No. 85B-26 P.5
 Bogotá, Colombia 

@@ -52,7 +52,7 @@ def clean_existing_documents_onedrive():
         print("[WARNING] No se pudo obtener token para limpiar documentos")
         return
     
-    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'mcanas@novacorp-plus.com')
+    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'servicioalcliente@novacorp-plus.com')
     headers = {'Authorization': f'Bearer {access_token}'}
     
     # Verificar si existe la carpeta Documentos_Generados/Comunicados
@@ -120,7 +120,7 @@ def download_template_from_onedrive():
     if not access_token:
         raise ValueError("No se pudo obtener token de acceso de Azure")
     
-    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'mcanas@novacorp-plus.com')
+    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'servicioalcliente@novacorp-plus.com')
     
     # Buscar archivos Word en la carpeta Documentos_Merge
     search_url = f"https://graph.microsoft.com/v1.0/users/{user_email}/drive/root:/Documentos_Merge:/children"
@@ -176,7 +176,7 @@ def download_excel_from_onedrive():
     if not access_token:
         raise ValueError("No se pudo obtener token de acceso de Azure")
     
-    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'mcanas@novacorp-plus.com')
+    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'servicioalcliente@novacorp-plus.com')
     
     # Buscar archivos Excel en la carpeta Documentos_Merge
     search_url = f"https://graph.microsoft.com/v1.0/users/{user_email}/drive/root:/Documentos_Merge:/children"
@@ -227,7 +227,7 @@ def get_excel_data():
 
 def get_onedrive_link(file_path, access_token):
     """Obtener link compartible de OneDrive para un archivo"""
-    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'mcanas@novacorp-plus.com')
+    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'servicioalcliente@novacorp-plus.com')
     headers = {'Authorization': f'Bearer {access_token}'}
     
     # Obtener información del archivo
@@ -240,19 +240,36 @@ def get_onedrive_link(file_path, access_token):
     return ''
 
 def create_public_sharing_link(file_path, access_token):
-    """Crear link público de compartición para un archivo PDF"""
-    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'mcanas@novacorp-plus.com')
+    """Crear link público de compartición para un archivo sin notificaciones"""
+    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'servicioalcliente@novacorp-plus.com')
     headers = {
         'Authorization': f'Bearer {access_token}',
         'Content-Type': 'application/json'
     }
     
-    # Crear link de compartición público
-    share_url = f"https://graph.microsoft.com/v1.0/users/{user_email}/drive/root:/{file_path}:/createLink"
+    # Primero obtener el ID del archivo
+    file_url = f"https://graph.microsoft.com/v1.0/users/{user_email}/drive/root:/{file_path}"
+    file_response = requests.get(file_url, headers=headers)
+    
+    if file_response.status_code != 200:
+        print(f"[WARNING] No se pudo obtener información del archivo: {file_response.text}")
+        return ''
+    
+    file_info = file_response.json()
+    file_id = file_info.get('id')
+    
+    if not file_id:
+        print(f"[WARNING] No se pudo obtener ID del archivo")
+        return ''
+    
+    # Crear link usando el ID del archivo con configuración silenciosa
+    share_url = f"https://graph.microsoft.com/v1.0/users/{user_email}/drive/items/{file_id}/createLink"
     
     payload = {
         "type": "view",
-        "scope": "anonymous"
+        "scope": "anonymous",
+        "sendNotification": False,
+        "retainInheritedPermissions": False
     }
     
     response = requests.post(share_url, headers=headers, json=payload)
@@ -262,7 +279,8 @@ def create_public_sharing_link(file_path, access_token):
         return share_info.get('link', {}).get('webUrl', '')
     else:
         print(f"[WARNING] Error creando link público: {response.text}")
-        return ''
+        # Fallback: usar webUrl del archivo si existe
+        return file_info.get('webUrl', '')
 
 
 
@@ -273,7 +291,7 @@ def upload_excel_to_onedrive():
     if not access_token or not temp_excel_path:
         return
     
-    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'mcanas@novacorp-plus.com')
+    user_email = os.environ.get('EXTERNAL_ONEDRIVE_EMAIL', 'servicioalcliente@novacorp-plus.com')
     
     # Obtener nombre del archivo Excel original
     search_url = f"https://graph.microsoft.com/v1.0/users/{user_email}/drive/root:/Documentos_Merge:/children"
@@ -379,7 +397,7 @@ for idx, row in df.iterrows():
         # Obtener token y subir
         access_token = get_access_token()
         if access_token:
-            uploader = OneDriveUploader(access_token, user_upn="mcanas@novacorp-plus.com")
+            uploader = OneDriveUploader(access_token, user_upn="servicioalcliente@novacorp-plus.com")
             folder_path = f"Documentos_Generados/Comunicados/{nit}"
             uploader.create_folder(folder_path)
             uploader.upload_file(temp_file.name, folder_path, nombre_archivo)
