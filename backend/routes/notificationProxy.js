@@ -27,7 +27,7 @@ const NOTIFICATIONS_API = 'http://10.11.11.5:8083/api/notifications/send';
 function getEmailContent(type, clientName, link) {
   if (type === 'comunicado') {
     return {
-      subject: 'CIERRE DE AÑO: Información Importante',
+      subject: 'CONTINUIDAD DE SERVICIOS 2026: Información Importante',
       message: `Apreciado Cliente ${clientName} buen día, 
       
 En el siguiente enlace encuentra información de alto impacto, nuestro interés seguir construyendo lazos.
