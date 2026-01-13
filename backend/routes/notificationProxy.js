@@ -139,13 +139,99 @@ router.post('/notifications/send', async (req, res) => {
         clientName,
         type,
       };
-    }));
+    }),
+    )
+
+    // Retornar resultados al cliente
+    res.json({ results: sendResults })
+  } catch (error) {
+    console.error("Error enviando notificaciones desde Excel:", error)
+    res.status(500).json({ error: "Error interno del servidor", detail: error.message })
+  }
+})
+
+router.post("/notifications/send-survey", async (req, res) => {
+  try {
+    const { excelData, defaultSubject, defaultBody, provider } = req.body
+
+    if (!excelData || !Array.isArray(excelData)) {
+      return res.status(400).json({ error: "Datos de Excel requeridos en formato array" })
+    }
+
+    if (!defaultSubject || !defaultBody) {
+      return res.status(400).json({ error: "Asunto y cuerpo por defecto son requeridos" })
+    }
+
+    if (!provider) {
+      return res.status(400).json({ error: "Proveedor de correo requerido" })
+    }
+
+    // Procesar todas las filas y enviar notificaciones en paralelo
+    const sendResults = await Promise.all(
+      excelData.map(async (row) => {
+        // Columna C (índice 2): Nombre/Razón social
+        const clientName = row[2] || "Cliente"
+
+        // Columna D (índice 3): Nombre de contacto
+        const contactName = row[3] || ""
+
+        // Columna F (índice 5): Correo electrónico
+        const recipient = (row[5] || "").trim() || "servicioalcliente@novacorp-plus.com"
+
+        // Columna H (índice 7): Asunto personalizado (usar default si está vacío)
+        const customSubject = (row[7] || "").trim()
+
+        // Columna I (índice 8): Cuerpo personalizado (usar default si está vacío)
+        const customBody = (row[8] || "").trim()
+
+        // Usar asunto personalizado o por defecto con variables reemplazadas
+        let finalSubject = customSubject || defaultSubject
+        if (!customSubject) {
+          finalSubject = finalSubject.replace(/\{clientName\}/g, clientName).replace(/\{contactName\}/g, contactName)
+        }
+
+        // Usar cuerpo personalizado o por defecto con variables reemplazadas
+        let finalBody = customBody || defaultBody
+        if (!customBody) {
+          finalBody = finalBody.replace(/\{clientName\}/g, clientName).replace(/\{contactName\}/g, contactName)
+        }
+
+        // Construir payload para el servicio externo
+        const payload = {
+          channels: ["email"],
+          provider,
+          recipient,
+          subject: finalSubject,
+          message: finalBody,
+        }
+
+        console.log("[v0] Enviando encuesta a:", recipient, "con asunto:", finalSubject, "provider:", provider)
+
+        // Llamar al servicio externo de notificaciones
+        const response = await fetch(NOTIFICATIONS_API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+
+        const text = await response.text()
+
+        return {
+          success: response.ok,
+          status: response.status,
+          response: text,
+          recipient,
+          clientName,
+          contactName,
+        }
+      }),
+    )
 
     // Retornar resultados al cliente
     res.json({ results: sendResults });
   } catch (error) {
-    console.error('Error enviando notificaciones desde Excel:', error);
-    res.status(500).json({ error: 'Error interno del servidor', detail: error.message });
+    console.error("Error enviando encuestas de satisfacción:", error);
+    res.status(500).json({ error: "Error interno del servidor", detail: error.message });
   }
 });
 

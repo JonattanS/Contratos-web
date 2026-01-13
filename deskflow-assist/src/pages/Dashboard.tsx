@@ -10,17 +10,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { SurveyModal } from "@/components/Dashboard/SurveyModal";
 
 type ActiveView = "dashboard" | "documents" | "quotes" | "notifications";
 
 export const Dashboard = () => {
   const [activeView, setActiveView] = useState<ActiveView>("dashboard");
   const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [showSurveyModal, setShowSurveyModal] = useState(false);
   const [notificationType, setNotificationType] = useState<"comunicado" | "cotizacion" | "">("");
   const [loading, setLoading] = useState({
     comunicado: false,
     cotizacion: false,
-    notificaciones: false
+    notificaciones: false,
+    survey: false,
   });
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -143,6 +146,60 @@ export const Dashboard = () => {
     if (Object.values(loading).some(l => l)) return; // Prevenir si hay otra operación en curso
     setShowNotificationModal(true);
   };
+  const handleSurveyClick = () => {
+    if (Object.values(loading).some((l) => l)) return
+    setShowSurveyModal(true)
+  }
+
+  const sendSurveyNotifications = async (
+    excelData: any[],
+    defaultSubject: string,
+    defaultBody: string,
+    provider: string,
+  ) => {
+    setLoading((prev) => ({ ...prev, survey: true }))
+
+    try {
+      const response = await fetch("http://10.11.11.246:3002/api/notifications/send-survey", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          excelData,
+          defaultSubject,
+          defaultBody,
+          provider,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(errorText)
+      }
+
+      const data = await response.json()
+      const successCount = data.results.filter((r: any) => r.success).length
+      const failCount = data.results.length - successCount
+
+      console.log("Resultados envío encuestas:", data.results)
+
+      if (successCount > 0) {
+        showPersistentSuccess(
+          `Se enviaron ${successCount} encuestas de satisfacción exitosamente${failCount > 0 ? `. ${failCount} fallaron.` : "."}`,
+        )
+        setShowSurveyModal(false)
+      } else {
+        throw new Error("No se pudo enviar ninguna encuesta")
+      }
+    } catch (err: any) {
+      toast({
+        title: "Error al enviar encuestas",
+        description: err.message || "Error desconocido",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading((prev) => ({ ...prev, survey: false }))
+    }
+  }
 
   const services = [
     {
@@ -171,7 +228,16 @@ export const Dashboard = () => {
       onClick: handleNotificationClick,
       loading: loading.notificaciones,
       disabled: Object.values(loading).some(l => l)
-    }
+    },
+    {
+      title: "Encuesta de satisfacción",
+      description: "Utiliza nuestra funcionalidad de Notinova para enviar correos masivos",
+      icon: loading.survey ? Loader2 : Bell,
+      variant: "accent" as const,
+      onClick: handleSurveyClick,
+      loading: loading.survey,
+      disabled: Object.values(loading).some((l) => l),
+    },
   ];
 
   const renderActiveView = () => {
@@ -236,7 +302,10 @@ export const Dashboard = () => {
                     <CardTitle>Seleccionar Tipo de Notificación</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <Select value={notificationType} onValueChange={(value: "comunicado" | "cotizacion") => setNotificationType(value)}>
+                    <Select
+                      value={notificationType}
+                      onValueChange={(value: "comunicado" | "cotizacion") => setNotificationType(value)}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecciona el tipo de notificación" />
                       </SelectTrigger>
@@ -279,6 +348,13 @@ export const Dashboard = () => {
             )}
 
             {/* Modal de éxito persistente */}
+            <SurveyModal
+              open={showSurveyModal}
+              onClose={() => setShowSurveyModal(false)}
+              onSend={sendSurveyNotifications}
+              loading={loading.survey}
+            />
+            
             <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
               <DialogContent>
                 <DialogHeader>
