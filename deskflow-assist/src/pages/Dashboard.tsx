@@ -156,6 +156,8 @@ export const Dashboard = () => {
     defaultSubject: string,
     defaultBody: string,
     provider: string,
+    defaultCC: string,
+    attachmentPath: string,
   ) => {
     setLoading((prev) => ({ ...prev, survey: true }))
 
@@ -168,6 +170,8 @@ export const Dashboard = () => {
           defaultSubject,
           defaultBody,
           provider,
+          defaultCC,
+          attachmentPath,
         }),
       })
 

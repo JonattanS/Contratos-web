@@ -152,7 +152,7 @@ router.post('/notifications/send', async (req, res) => {
 
 router.post("/notifications/send-survey", async (req, res) => {
   try {
-    const { excelData, defaultSubject, defaultBody, provider } = req.body
+    const { excelData, defaultSubject, defaultBody, provider, defaultCC, attachmentPath } = req.body
 
     if (!excelData || !Array.isArray(excelData)) {
       return res.status(400).json({ error: "Datos de Excel requeridos en formato array" })
@@ -164,6 +164,26 @@ router.post("/notifications/send-survey", async (req, res) => {
 
     if (!provider) {
       return res.status(400).json({ error: "Proveedor de correo requerido" })
+    }
+
+    const defaultCCArray = (defaultCC || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean)
+
+    let attachmentConfig = null
+    if (attachmentPath && attachmentPath.trim()) {
+      // Convert single backslashes to double backslashes for JSON
+      const normalizedPath = attachmentPath.replace(/\\/g, "\\\\")
+
+      // Extract filename from path (handles both / and \\ separators)
+      const pathParts = attachmentPath.split(/[/\\]/)
+      const filename = pathParts[pathParts.length - 1] || "archivo.pdf"
+
+      attachmentConfig = {
+        filename,
+        filePath: normalizedPath,
+      }
     }
 
     // Procesar todas las filas y enviar notificaciones en paralelo
@@ -184,6 +204,14 @@ router.post("/notifications/send-survey", async (req, res) => {
         // Columna I (índice 8): Cuerpo personalizado (usar default si está vacío)
         const customBody = (row[8] || "").trim()
 
+        const excelCCStr = (row[9] || "").trim()
+        const excelCCArray = excelCCStr
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+
+        const combinedCC = [...defaultCCArray, ...excelCCArray]
+
         // Usar asunto personalizado o por defecto con variables reemplazadas
         let finalSubject = customSubject || defaultSubject
         if (!customSubject) {
@@ -203,9 +231,22 @@ router.post("/notifications/send-survey", async (req, res) => {
           recipient,
           subject: finalSubject,
           message: finalBody,
+          ...(combinedCC.length > 0 && { cc: combinedCC }),
+          ...(attachmentConfig && { attachments: [attachmentConfig] }),
         }
 
-        console.log("[v0] Enviando encuesta a:", recipient, "con asunto:", finalSubject, "provider:", provider)
+        console.log(
+          "[v0] Enviando encuesta a:",
+          recipient,
+          "con asunto:",
+          finalSubject,
+          "provider:",
+          provider,
+          "cc:",
+          combinedCC.length > 0 ? combinedCC : "sin CC",
+          "attachments:",
+          attachmentConfig ? `${attachmentConfig.filename}` : "sin adjunto",
+        )
 
         // Llamar al servicio externo de notificaciones
         const response = await fetch(NOTIFICATIONS_API, {

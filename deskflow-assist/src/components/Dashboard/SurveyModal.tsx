@@ -16,7 +16,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 interface SurveyModalProps {
   open: boolean
   onClose: () => void
-  onSend: (excelData: any[], defaultSubject: string, defaultBody: string, provider: string) => Promise<void>
+  onSend: (
+    excelData: any[],
+    defaultSubject: string,
+    defaultBody: string,
+    provider: string,
+    defaultCC: string,
+    attachmentPath: string,
+  ) => Promise<void>
   loading: boolean
 }
 
@@ -24,6 +31,8 @@ export const SurveyModal = ({ open, onClose, onSend, loading }: SurveyModalProps
   const [excelFile, setExcelFile] = useState<File | null>(null)
   const [excelData, setExcelData] = useState<any[] | null>(null)
   const [provider, setProvider] = useState("Office365KOS")
+  const [defaultCC, setDefaultCC] = useState("")
+  const [attachmentPath, setAttachmentPath] = useState("")
   const [defaultSubject, setDefaultSubject] = useState("Encuesta de Satisfacción - {clientName}")
   const [defaultBody, setDefaultBody] = useState(
     `Estimado/a {contactName},\n\nEsperamos que se encuentre bien. En {clientName} nos esforzamos por brindar el mejor servicio posible.\n\nPor favor, tómese un momento para completar nuestra breve encuesta de satisfacción.\n\nAgradecemos su tiempo y colaboración.\n\nCordialmente,\nEquipo Nova Corp SAS`,
@@ -143,7 +152,7 @@ export const SurveyModal = ({ open, onClose, onSend, loading }: SurveyModalProps
       return
     }
 
-    await onSend(excelData, defaultSubject, defaultBody, provider)
+    await onSend(excelData, defaultSubject, defaultBody, provider, defaultCC, attachmentPath)
   }
 
   const handleClose = () => {
@@ -188,7 +197,8 @@ export const SurveyModal = ({ open, onClose, onSend, loading }: SurveyModalProps
               </p>
             )}
             <p className="text-xs text-muted-foreground">
-              El Excel debe contener columnas: C=Nombre, D=Contacto, F=Email, H=Asunto (opcional), I=Cuerpo (opcional)
+              El Excel debe contener columnas: C=Nombre, D=Contacto, F=Email, H=Asunto (opcional), I=Cuerpo (opcional),
+              J=CC (opcional)
             </p>
           </div>
 
@@ -200,14 +210,28 @@ export const SurveyModal = ({ open, onClose, onSend, loading }: SurveyModalProps
                 <SelectValue placeholder="Selecciona el proveedor de correo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="office365Con">Servicio al cliente</SelectItem>
                 <SelectItem value="office365Cal">Calidad</SelectItem>
+                <SelectItem value="office365Con">Servicio al cliente</SelectItem>
                 <SelectItem value="Office365">Desarrollo</SelectItem>
-                <SelectItem value="no">no</SelectItem>
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
               Selecciona el proveedor de correo que se utilizará para enviar las encuestas.
+            </p>
+          </div>
+
+          {/* Correos en Copia (CC) - Por Defecto */}
+          <div className="space-y-2">
+            <Label htmlFor="default-cc">Correos en Copia (CC) - Por Defecto</Label>
+            <Input
+              id="default-cc"
+              value={defaultCC}
+              onChange={(e) => setDefaultCC(e.target.value)}
+              placeholder="correo1@ejemplo.com, correo2@ejemplo.com"
+              disabled={loading}
+            />
+            <p className="text-xs text-muted-foreground">
+              Correos separados por coma. Se combinarán con los CC de la columna J del Excel si existen.
             </p>
           </div>
 
@@ -239,6 +263,21 @@ export const SurveyModal = ({ open, onClose, onSend, loading }: SurveyModalProps
             />
             <p className="text-xs text-muted-foreground">
               Puedes usar variables: {"{clientName}"}, {"{contactName}"}
+            </p>
+          </div>
+
+          {/* Ruta del Archivo Adjunto */}
+          <div className="space-y-2">
+            <Label htmlFor="attachment-path">Ruta del Archivo Adjunto (Opcional)</Label>
+            <Input
+              id="attachment-path"
+              value={attachmentPath}
+              onChange={(e) => setAttachmentPath(e.target.value)}
+              placeholder="C:\tmp\documento.pdf"
+              disabled={loading}
+            />
+            <p className="text-xs text-muted-foreground">
+              Ingresa la ruta completa del archivo en el servidor. Ejemplo: C:\tmp\test.pdf
             </p>
           </div>
 
