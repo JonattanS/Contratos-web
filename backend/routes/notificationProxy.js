@@ -24,15 +24,15 @@ const NOTIFICATIONS_API = 'http://10.11.11.5:8083/api/notifications/send';
 // });
 
 // Función para generar el contenido según el tipo
-function getEmailContent(type, clientName, link) {
-  if (type === 'comunicado') {
+function getEmailContent(type, clientName, linkComunicado, linkCotizacion) {
+  if (type === "comunicado") {
     return {
       subject: 'CONTINUIDAD DE SERVICIOS 2026: Información Importante',
       message: `Apreciado Cliente ${clientName} buen día, 
       
 En el siguiente enlace encuentra información de alto impacto, nuestro interés seguir construyendo lazos.
 
-${link}
+${linkComunicado}
 
 Estaremos atentos a sus comentarios.
 
@@ -51,12 +51,14 @@ www.novacorp-plus.com`
       subject: 'Continuidad Servicios 2026',
       message: `Estimado Cliente ${clientName} buen día, 
 
-Atendiendo el asunto citado, en el siguiente enlace encuentra los documentos:
+Atendiendo el asunto citado, en los siguientes enlaces encuentra los documentos:
 
-  • Propuesta Renovación Servicios.
+  • Propuesta Renovación Servicios:
+${linkCotizacion}
+
   • Paquete Documentos Legales.
-
-${link}
+${linkComunicado}
+ 
 
 A la espera de su confirmación del recibido.
 
@@ -106,13 +108,12 @@ router.post('/notifications/send', async (req, res) => {
       const cc = ccStr.split(',').map(s => s.trim()).filter(Boolean);
       
       // Obtener datos específicos para el contenido
-      const clientName = row['Razón social'] || 'Cliente';
-      const link = type === 'comunicado' 
-        ? (row['Link_PDF_Comunicado'] || row['Link_Comunicado'] || '#')
-        : (row['Link_PDF_Renovacion'] || row['Link_Renovacion'] || '#');
+      const clientName = row["Razón social"] || "Cliente"
+        const linkComunicado = row["Link_PDF_Comunicado"] || row["Link_Comunicado"] || "#"
+        const linkCotizacion = row["Link_PDF_Renovacion"] || row["Link_Renovacion"] || "#"
 
-      // Generar contenido según tipo
-      const emailContent = getEmailContent(type, clientName, link);
+        // Generar contenido según tipo
+        const emailContent = getEmailContent(type, clientName, linkComunicado, linkCotizacion)
 
       // Construir payload con contenido personalizado
       const payload = {
