@@ -54,7 +54,7 @@ www.novacorp-plus.com`
 Atendiendo el asunto citado, en los siguientes enlaces encuentra los documentos:
 
   • Propuesta Renovación Servicios:
-${linkCotizacion}
+      ${linkCotizacion}
 
   • Paquete Documentos Legales.
       https://novacorp20-my.sharepoint.com/:f:/g/personal/contabilidad_novacorp-plus_com/IgApsGWWqGZkTrI7YMCbH2RXAUn1FiPxv7zHX-6w73hfQjM
@@ -151,6 +151,8 @@ router.post('/notifications/send', async (req, res) => {
   }
 })
 
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
 router.post("/notifications/send-survey", async (req, res) => {
   try {
     const { excelData, defaultSubject, defaultBody, provider, defaultCC, attachmentPath } = req.body
@@ -188,45 +190,47 @@ router.post("/notifications/send-survey", async (req, res) => {
     }
 
     // Procesar todas las filas y enviar notificaciones en paralelo
-    const sendResults = await Promise.all(
-      excelData.map(async (row) => {
-        // Columna C (índice 2): Nombre/Razón social
-        const clientName = row[2] || "Cliente"
+    const sendResults = []
 
-        // Columna D (índice 3): Nombre de contacto
-        const contactName = row[3] || ""
+    for (let i = 0; i < excelData.length; i++) {
+      const row = excelData[i]
 
-        // Columna F (índice 5): Correo electrónico
-        const recipient = (row[5] || "").trim() || "servicioalcliente@novacorp-plus.com"
+      // Columna C (índice 2): Nombre/Razón social
+      const clientName = row[2] || "Cliente"
 
-        // Columna H (índice 7): Asunto personalizado (usar default si está vacío)
-        const customSubject = (row[7] || "").trim()
+      // Columna D (índice 3): Nombre de contacto
+      const contactName = row[3] || ""
 
-        // Columna I (índice 8): Cuerpo personalizado (usar default si está vacío)
-        const customBody = (row[8] || "").trim()
+      // Columna F (índice 5): Correo electrónico
+      const recipient = (row[5] || "").trim() || "servicioalcliente@novacorp-plus.com"
 
-        const excelCCStr = (row[9] || "").trim()
-        const excelCCArray = excelCCStr
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean)
+      // Columna H (índice 7): Asunto personalizado
+      const customSubject = (row[7] || "").trim()
 
-        const combinedCC = [...defaultCCArray, ...excelCCArray]
+      // Columna I (índice 8): Cuerpo personalizado
+      const customBody = (row[8] || "").trim()
 
-        // Usar asunto personalizado o por defecto con variables reemplazadas
-        let finalSubject = customSubject || defaultSubject
-        if (!customSubject) {
-          finalSubject = finalSubject.replace(/\{clientName\}/g, clientName).replace(/\{contactName\}/g, contactName)
-        }
+      // Columna J (índice 9): CC del Excel
+      const excelCCStr = (row[9] || "").trim()
+      const excelCCArray = excelCCStr
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
 
-        // Usar cuerpo personalizado o por defecto con variables reemplazadas
-        let finalBody = customBody || defaultBody
-        if (!customBody) {
-          finalBody = finalBody.replace(/\{clientName\}/g, clientName).replace(/\{contactName\}/g, contactName)
-        }
+      const combinedCC = [...defaultCCArray, ...excelCCArray]
 
-        // Construir payload para el servicio externo
-        const payload = {
+      let finalSubject = customSubject || defaultSubject
+      if (!customSubject) {
+        finalSubject = finalSubject.replace(/\{clientName\}/g, clientName).replace(/\{contactName\}/g, contactName)
+      }
+
+      let finalBody = customBody || defaultBody
+      if (!customBody) {
+        finalBody = finalBody.replace(/\{clientName\}/g, clientName).replace(/\{contactName\}/g, contactName)
+      }
+
+      // Construir payload para el servicio externo
+      const payload = {
           channels: ["email"],
           provider,
           recipient,
@@ -234,10 +238,10 @@ router.post("/notifications/send-survey", async (req, res) => {
           message: finalBody,
           ...(combinedCC.length > 0 && { cc: combinedCC }),
           ...(attachmentConfig && { attachments: [attachmentConfig] }),
-        }
+      }
 
         console.log(
-          "[v0] Enviando encuesta a:",
+          `[v0] Enviando encuesta ${i + 1}/${excelData.length} a:`,
           recipient,
           "con asunto:",
           finalSubject,
@@ -250,24 +254,38 @@ router.post("/notifications/send-survey", async (req, res) => {
         )
 
         // Llamar al servicio externo de notificaciones
-        const response = await fetch(NOTIFICATIONS_API, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        })
-
-        const text = await response.text()
-
-        return {
-          success: response.ok,
-          status: response.status,
-          response: text,
+        try {
+	        const response = await fetch(NOTIFICATIONS_API, {
+	          method: "POST",
+	          headers: { "Content-Type": "application/json" },
+	          body: JSON.stringify(payload),
+	        })
+	
+	        const text = await response.text()
+	
+	        sendResults.push({
+	          success: response.ok,
+	          status: response.status,
+	          response: text,
+	          recipient,
+	          clientName,
+	          contactName,
+	        })
+        } catch (fetchError) {
+        sendResults.push({
+          success: false,
+          status: 500,
+          response: fetchError.message,
           recipient,
           clientName,
           contactName,
-        }
-      }),
-    )
+        })
+      }
+
+      if (i < excelData.length - 1) {
+        await delay(2000)
+      }
+    }
 
     // Retornar resultados al cliente
     res.json({ results: sendResults });
