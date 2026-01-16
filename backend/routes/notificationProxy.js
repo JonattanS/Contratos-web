@@ -57,7 +57,7 @@ Atendiendo el asunto citado, en los siguientes enlaces encuentra los documentos:
 ${linkCotizacion}
 
   • Paquete Documentos Legales.
-${linkComunicado}
+      https://novacorp20-my.sharepoint.com/:f:/g/personal/contabilidad_novacorp-plus_com/IgApsGWWqGZkTrI7YMCbH2RXAUn1FiPxv7zHX-6w73hfQjM
  
 
 A la espera de su confirmación del recibido.
