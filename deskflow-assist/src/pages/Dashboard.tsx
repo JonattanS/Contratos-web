@@ -27,6 +27,7 @@ export const Dashboard = () => {
   });
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [logFilename, setLogFilename] = useState<string | null>(null);
 
   // Función para mostrar modal de éxito persistente
   const showPersistentSuccess = (message: string) => {
@@ -186,6 +187,10 @@ export const Dashboard = () => {
 
       console.log("Resultados envío encuestas:", data.results)
 
+	  if (data.logFilename) {
+        setLogFilename(data.logFilename)
+      }
+      
       if (successCount > 0) {
         showPersistentSuccess(
           `Se enviaron ${successCount} encuestas de satisfacción exitosamente${failCount > 0 ? `. ${failCount} fallaron.` : "."}`,
@@ -202,6 +207,12 @@ export const Dashboard = () => {
       })
     } finally {
       setLoading((prev) => ({ ...prev, survey: false }))
+    }
+  }
+
+  const downloadLog = () => {
+    if (logFilename) {
+      window.open(`http://10.11.11.246:3002/api/notifications/download-log/${logFilename}`, "_blank")
     }
   }
 
@@ -367,8 +378,18 @@ export const Dashboard = () => {
                     {successMessage}
                   </DialogDescription>
                 </DialogHeader>
-                <div className="flex justify-end">
-                  <Button onClick={() => setShowSuccessModal(false)}>
+                <div className="flex justify-end gap-2">
+                  {logFilename && (
+                    <Button variant="outline" onClick={downloadLog}>
+                      Descargar Log
+                    </Button>
+                  )}
+                  <Button
+                    onClick={() => {
+                      setShowSuccessModal(false)
+                      setLogFilename(null)
+                    }}
+                  >
                     Entendido
                   </Button>
                 </div>

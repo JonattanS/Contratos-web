@@ -1,0 +1,58 @@
+================================================================================
+LOG DE ENVÍO DE ENCUESTAS DE SATISFACCIÓN
+Fecha: 5/2/2026, 9:29:41 a. m.
+Total de correos a enviar: 3
+Proveedor: Office365
+CC por defecto: ssanchez@novacorp-plus.com
+Adjunto: test.pdf
+================================================================================
+
+
+────────────────────────────────────────────────────────────────────────────────
+ENVÍO #1 de 3
+Hora: 5/2/2026, 9:29:41 a. m.
+Cliente: Abbott Laboratories de Colombia S.A.
+Contacto: Monica Calderón
+Destinatario: ssanchez@novacorp-plus.com
+CC: ssanchez@novacorp-plus.com, stiven131bee@gmail.com, ssanchez@novacorp-plus.com
+Asunto: Encuesta de Satisfacción 
+Adjunto: test.pdf
+Estado: EXITOSO
+Código HTTP: 200
+Respuesta: {"message":"Notificación enviada correctamente","timestamp":"2026-02-05T14:29:45.199896200Z","summary":{"total":1,"successful":1,"failed":0},"results":{"email":{"status":"success","message":"Enviado correctamente","errorCode":null,"description":null,"success":true}}}
+
+────────────────────────────────────────────────────────────────────────────────
+ENVÍO #2 de 3
+Hora: 5/2/2026, 9:29:57 a. m.
+Cliente: ACS ACIEL SOLUCIONES INTEGRALES SAS
+Contacto: William Trujillo
+Destinatario: minsuasti@novacorp-plus.com
+CC: ssanchez@novacorp-plus.com, ssanchez@novacorp-plus.com
+Asunto: Encuesta de Satisfacción 
+Adjunto: test.pdf
+Estado: EXITOSO
+Código HTTP: 200
+Respuesta: {"message":"Notificación enviada correctamente","timestamp":"2026-02-05T14:29:57.900765700Z","summary":{"total":1,"successful":1,"failed":0},"results":{"email":{"status":"success","message":"Enviado correctamente","errorCode":null,"description":null,"success":true}}}
+
+────────────────────────────────────────────────────────────────────────────────
+ENVÍO #3 de 3
+Hora: 5/2/2026, 9:30:02 a. m.
+Cliente: ACS ACIEL SOLUCIONES INTEGRALES SAS
+Contacto: William Trujillo
+Destinatario: mmoreno@novacorp-plus.com
+CC: ssanchez@novacorp-plus.com, ssanchez@novacorp-plus.com
+Asunto: Encuesta de Satisfacción 
+Adjunto: test.pdf
+Estado: EXITOSO
+Código HTTP: 200
+Respuesta: {"message":"Notificación enviada correctamente","timestamp":"2026-02-05T14:30:02.647714500Z","summary":{"total":1,"successful":1,"failed":0},"results":{"email":{"status":"success","message":"Enviado correctamente","errorCode":null,"description":null,"success":true}}}
+
+================================================================================
+RESUMEN FINAL
+================================================================================
+Total enviados: 3
+Exitosos: 3
+Fallidos: 0
+Porcentaje de éxito: 100.00%
+Finalizado: 5/2/2026, 9:30:05 a. m.
+================================================================================
