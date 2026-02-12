@@ -212,9 +212,8 @@ export const SurveyModal = ({ open, onClose, onSend, loading }: SurveyModalProps
               <SelectContent>
                 <SelectItem value="office365Cal">Calidad</SelectItem>
                 <SelectItem value="office365Con">Servicio al cliente</SelectItem>
-                <SelectItem value="Office365Ser">Prestacion de servicio</SelectItem>
-                <SelectItem value="Office365">Desarrollo</SelectItem>
-                <SelectItem value="Office365">Desarrollo</SelectItem>
+                <SelectItem value="office365Ser">Prestacion de servicio</SelectItem>
+                <SelectItem value="office365">Desarrollo</SelectItem>
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
