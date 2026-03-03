@@ -6,7 +6,7 @@ const path = require('path');
 const fs = require('fs');
 
 const EXCEL_TEMP_PATH = path.join(__dirname, '..', 'Temp', 'excel_clientes_temp.xlsx');
-const NOTIFICATIONS_API = 'http://10.11.11.5:8083/api/notifications/send';
+const NOTIFICATIONS_API = 'http://10.11.11.246:8083/api/notifications/send';
 const LOG_TEMP_PATH = path.join(__dirname, "..", "Temp")
 
 // Funcionalidad antigua comentada intencionalmente
