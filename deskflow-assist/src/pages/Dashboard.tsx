@@ -11,10 +11,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { SurveyModal } from "@/components/Dashboard/SurveyModal";
+import { useUser } from "@/contexts/UserContext";
 
 type ActiveView = "dashboard" | "documents" | "quotes" | "notifications";
 
 export const Dashboard = () => {
+  const { user } = useUser();
   const [activeView, setActiveView] = useState<ActiveView>("dashboard");
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [showSurveyModal, setShowSurveyModal] = useState(false);
@@ -216,7 +218,7 @@ export const Dashboard = () => {
     }
   }
 
-  const services = [
+  const allServices = [
     {
       title: "Generar Comunicados",
       description: "Ejecuta el programa Comunicado.py para generar documentos oficiales.",
@@ -245,7 +247,7 @@ export const Dashboard = () => {
       disabled: Object.values(loading).some(l => l)
     },
     {
-      title: "Encuesta de satisfacción",
+      title: "Notinova correo",
       description: "Utiliza nuestra funcionalidad de Notinova para enviar correos masivos",
       icon: loading.survey ? Loader2 : Bell,
       variant: "accent" as const,
@@ -254,6 +256,16 @@ export const Dashboard = () => {
       disabled: Object.values(loading).some((l) => l),
     },
   ];
+
+  const services = allServices.filter(service => {
+    if (user?.usrcod === 'user3@nov') {
+      return ["Generar Comunicados", "Generar Cotizaciones", "Notificaciones Automatizadas"].includes(service.title);
+    }
+    if (user?.usrcod === 'user2@nov') {
+      return ["Notinova correo"].includes(service.title);
+    }
+    return true; 
+  });
 
   const renderActiveView = () => {
     switch (activeView) {

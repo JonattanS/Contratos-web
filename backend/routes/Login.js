@@ -20,9 +20,24 @@ router.post('/login', async (req, res) => {
       return res.status(200).json({ success: false, message: "Usuario no existe" });
     }
 
-    const user = rows[0];
+const user = rows[0];
 
-    if (user.usrpsw !== usrpsw) {
+    // Verificar contraseña con bcryptjs (soporta hashes de bcrypt)
+    const bcrypt = require('bcryptjs');
+    let isMatch = false;
+    
+    try {
+      if (user.usrpsw && user.usrpsw.startsWith('$2')) {
+        isMatch = await bcrypt.compare(usrpsw, user.usrpsw);
+      } else {
+        // Fallback para usuarios antiguos que tengan contraseña en texto plano
+        isMatch = (user.usrpsw === usrpsw);
+      }
+    } catch(err) {
+      isMatch = (user.usrpsw === usrpsw);
+    }
+
+    if (!isMatch) {
       return res.status(200).json({ success: false, message: "Contraseña incorrecta" });
     }
 
