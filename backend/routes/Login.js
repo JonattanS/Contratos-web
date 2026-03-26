@@ -66,7 +66,7 @@ const user = rows[0];
         roldes: rol.roldes
       },
       JWT_SECRET,
-      { expiresIn: '1h' }
+      { expiresIn: '120m' }
     );
 
     // Devolver datos del usuario y token
@@ -92,4 +92,32 @@ const user = rows[0];
   }
 });
 
+router.post('/refresh-token', async (req, res) => {
+  const { token } = req.body;
+  if (!token) return res.status(400).json({ success: false, message: "Token requerido" });
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET, { ignoreExpiration: true });
+    // Firmar de nuevo por 120 minutos
+    const newToken = jwt.sign(
+      {
+        id: decoded.id,
+        adm_ciaid: decoded.adm_ciaid,
+        usrcod: decoded.usrcod,
+        usrnom: decoded.usrnom,
+        ciaraz: decoded.ciaraz,
+        adm_rolid: decoded.adm_rolid,
+        rolcod: decoded.rolcod,
+        roldes: decoded.roldes
+      },
+      JWT_SECRET,
+      { expiresIn: '120m' }
+    );
+    res.json({ success: true, token: newToken });
+  } catch (err) {
+    res.status(401).json({ success: false, message: "Token inválido" });
+  }
+});
+
 module.exports = router;
+
