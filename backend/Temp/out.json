@@ -1,0 +1,62 @@
+
+=== USR ===
+[
+  {
+    "id": 6,
+    "adm_ciaid": 1,
+    "usrcod": "user3@nov",
+    "usrnom": "Usuario Contabilidad",
+    "usrpsw": "N0v4C0nt.2025",
+    "adm_rolid": 4,
+    "estcod": 6
+  }
+]
+
+=== ROL ===
+[
+  {
+    "id": 1,
+    "adm_ciaid": 2,
+    "rolcod": "adm",
+    "roldes": "Administrador",
+    "rolsis": false,
+    "estcod": 6,
+    "created_at": null
+  },
+  {
+    "id": 2,
+    "adm_ciaid": 2,
+    "rolcod": "conta",
+    "roldes": "Contador",
+    "rolsis": false,
+    "estcod": 6,
+    "created_at": null
+  },
+  {
+    "id": 3,
+    "adm_ciaid": 2,
+    "rolcod": "teso",
+    "roldes": "Tesoreria",
+    "rolsis": false,
+    "estcod": 6,
+    "created_at": null
+  },
+  {
+    "id": 4,
+    "adm_ciaid": 1,
+    "rolcod": "adm",
+    "roldes": "Administrador",
+    "rolsis": false,
+    "estcod": 6,
+    "created_at": null
+  },
+  {
+    "id": 5,
+    "adm_ciaid": 3,
+    "rolcod": "conta",
+    "roldes": "Contador",
+    "rolsis": false,
+    "estcod": 6,
+    "created_at": null
+  }
+]

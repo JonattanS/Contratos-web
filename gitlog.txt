@@ -1,0 +1,27 @@
+commit f8cc9841b17379f4d996c8c50acf591c6c998e39
+Author: JanattanS <ssanchez@novacorp-plus.com>
+Date:   Thu Mar 26 11:12:33 2026 -0500
+
+    fix: require provider selection before sending email in SurveyModal
+
+ deskflow-assist/src/components/Dashboard/SurveyModal.tsx | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+commit 42b8bd59fa09dffff518aec3a28fd0419f4067a7
+Author: JanattanS <ssanchez@novacorp-plus.com>
+Date:   Thu Mar 26 10:41:02 2026 -0500
+
+    feat: enhance SurveyModal with advanced column mapping and validation for Excel uploads
+
+ .../src/components/Dashboard/SurveyModal.tsx       | 212 ++++++++++++++++-----
+ 1 file changed, 163 insertions(+), 49 deletions(-)
+
+commit a872673973538b4cc0a3ccb8c81d1031e75b93da
+Author: JanattanS <ssanchez@novacorp-plus.com>
+Date:   Tue Mar 3 14:48:02 2026 -0500
+
+    fix: update notifications API endpoint and add new option in SurveyModal
+
+ backend/routes/notificationProxy.js                      | 2 +-
+ deskflow-assist/src/components/Dashboard/SurveyModal.tsx | 1 +
+ 2 files changed, 2 insertions(+), 1 deletion(-)
