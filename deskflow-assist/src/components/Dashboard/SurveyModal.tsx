@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Loader2, Upload, X } from "lucide-react"
+import { Loader2, Upload, X, Settings } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import * as XLSX from "xlsx"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -29,7 +29,24 @@ interface SurveyModalProps {
 
 export const SurveyModal = ({ open, onClose, onSend, loading }: SurveyModalProps) => {
   const [excelFile, setExcelFile] = useState<File | null>(null)
-  const [excelData, setExcelData] = useState<any[] | null>(null)
+  const [rawRows, setRawRows] = useState<any[][]>([])
+  const [headers, setHeaders] = useState<string[]>([])
+  const [showConfig, setShowConfig] = useState(false)
+  
+  const [colMap, setColMap] = useState({
+    name: 2,
+    contact: 3,
+    email: 5,
+    subject: 7,
+    body: 8,
+    cc: 9
+  })
+
+  const validRows = rawRows.filter((row) => {
+    const email = (row[colMap.email] || "").toString().trim()
+    return email.length > 0
+  })
+
   const [provider, setProvider] = useState("Office365KOS")
   const [defaultCC, setDefaultCC] = useState("")
   const [attachmentPath, setAttachmentPath] = useState("")
@@ -79,7 +96,8 @@ export const SurveyModal = ({ open, onClose, onSend, loading }: SurveyModalProps
 
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" })
 
-        // Remover la primera fila (encabezados) y procesar datos
+        // Fila de encabezados y resto de datos
+        const headerRow = (jsonData[0] as string[]) || []
         const dataRows = jsonData.slice(1) as any[][]
 
         if (dataRows.length === 0) {
@@ -92,26 +110,26 @@ export const SurveyModal = ({ open, onClose, onSend, loading }: SurveyModalProps
           return
         }
 
-        const validRows = dataRows.filter((row) => {
-          const email = (row[5] || "").toString().trim()
+        setHeaders(headerRow.map(String))
+        setRawRows(dataRows)
+
+        const initialValidRows = dataRows.filter((row) => {
+          const email = (row[colMap.email] || "").toString().trim()
           return email.length > 0
         })
 
-        if (validRows.length === 0) {
+        if (initialValidRows.length === 0) {
           toast({
-            title: "Sin datos válidos",
-            description: "El archivo no contiene registros con correo electrónico válido en la columna F.",
-            variant: "destructive",
+            title: "Revisa la configuración",
+            description: "No se encontraron correos en la columna configurada por defecto. Por favor ajusta el mapeo de columnas.",
+            variant: "default",
           })
-          setExcelFile(null)
-          return
+        } else {
+          toast({
+            title: "Archivo cargado",
+            description: `Se encontraron ${initialValidRows.length} registros válidos para procesar.`,
+          })
         }
-
-        setExcelData(validRows)
-        toast({
-          title: "Archivo cargado",
-          description: `Se encontraron ${validRows.length} registros válidos para procesar.`,
-        })
       } catch (error) {
         console.error("Error al leer Excel:", error)
         toast({
@@ -127,17 +145,18 @@ export const SurveyModal = ({ open, onClose, onSend, loading }: SurveyModalProps
 
   const handleRemoveFile = () => {
     setExcelFile(null)
-    setExcelData(null)
+    setRawRows([])
+    setHeaders([])
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
   }
 
   const handleSend = async () => {
-    if (!excelData || excelData.length === 0) {
+    if (validRows.length === 0) {
       toast({
-        title: "Archivo requerido",
-        description: "Por favor carga un archivo Excel antes de enviar.",
+        title: "Sin datos válidos",
+        description: "Por favor carga un archivo Excel y asegúrate de configurar correctamente la columna de Correo Electrónico.",
         variant: "destructive",
       })
       return
@@ -152,7 +171,19 @@ export const SurveyModal = ({ open, onClose, onSend, loading }: SurveyModalProps
       return
     }
 
-    await onSend(excelData, defaultSubject, defaultBody, provider, defaultCC, attachmentPath)
+    // Adaptar los datos al formato original que el backend espera
+    const mappedExcelData = validRows.map(row => {
+      const newRow: any[] = []
+      newRow[2] = row[colMap.name]
+      newRow[3] = row[colMap.contact]
+      newRow[5] = row[colMap.email]
+      newRow[7] = row[colMap.subject]
+      newRow[8] = row[colMap.body]
+      newRow[9] = row[colMap.cc]
+      return newRow
+    })
+
+    await onSend(mappedExcelData, defaultSubject, defaultBody, provider, defaultCC, attachmentPath)
   }
 
   const handleClose = () => {
@@ -192,35 +223,118 @@ export const SurveyModal = ({ open, onClose, onSend, loading }: SurveyModalProps
               )}
             </div>
             {excelFile && (
-              <p className="text-sm text-green-600">
-                ✓ {excelFile.name} ({excelData?.length || 0} registros)
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-green-600">
+                  ✓ {excelFile.name} ({validRows.length} registros válidos)
+                </p>
+              </div>
             )}
-            <p className="text-xs text-muted-foreground">
-              El Excel debe contener columnas: C=Nombre, D=Contacto, F=Email, H=Asunto (opcional), I=Cuerpo (opcional),
-              J=CC (opcional)
-            </p>
+            <div className="flex justify-between items-center bg-muted/30 p-2 rounded border mt-2">
+              <p className="text-xs text-muted-foreground">
+                Por defecto el sistema asume columnas específicas, pero puedes mapearlas ingresando a la configuración.
+              </p>
+              <Button variant="outline" size="sm" onClick={() => setShowConfig(!showConfig)} disabled={loading}>
+                <Settings className="h-4 w-4 mr-2" />
+                Configuración
+              </Button>
+            </div>
           </div>
 
-          {/* Proveedor de Correo */}
-          <div className="space-y-2">
-            <Label htmlFor="provider">Proveedor de Correo</Label>
-            <Select value={provider} onValueChange={setProvider} disabled={loading}>
-              <SelectTrigger id="provider">
-                <SelectValue placeholder="Selecciona el proveedor de correo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="office365Cal">Calidad</SelectItem>
-                <SelectItem value="office365Con">Servicio al cliente</SelectItem>
-                <SelectItem value="office365Ser">Prestacion de servicio</SelectItem>
-                <SelectItem value="office365Cont">Cantabilidad Nova</SelectItem>
-                <SelectItem value="office365">Desarrollo</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Selecciona el proveedor de correo que se utilizará para enviar las encuestas.
-            </p>
-          </div>
+          {showConfig && (
+            <div className="p-4 bg-muted/50 rounded-lg space-y-4 border shadow-sm">
+              <h3 className="text-sm font-semibold flex items-center">
+                <Settings className="h-4 w-4 mr-2" />
+                Configuración Avanzada
+              </h3>
+              
+              {/* Proveedor de Correo */}
+              <div className="space-y-2">
+                <Label htmlFor="provider">Proveedor de Correo</Label>
+                <Select value={provider} onValueChange={setProvider} disabled={loading}>
+                  <SelectTrigger id="provider" className="bg-background">
+                    <SelectValue placeholder="Selecciona el proveedor de correo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="office365Cal">Calidad</SelectItem>
+                    <SelectItem value="office365Con">Servicio al cliente</SelectItem>
+                    <SelectItem value="office365Ser">Prestacion de servicio</SelectItem>
+                    <SelectItem value="office365Cont">Cantabilidad Nova</SelectItem>
+                    <SelectItem value="office365">Desarrollo</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Selecciona el proveedor de correo que se utilizará para enviar las encuestas.
+                </p>
+              </div>
+
+              {/* Columnas Mapping */}
+              <div className="space-y-2">
+                <Label>Mapeo de Columnas del Archivo Excel</Label>
+                {headers.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Nombre/Razón Social</Label>
+                      <Select value={colMap.name.toString()} onValueChange={(val) => setColMap(prev => ({...prev, name: parseInt(val)}))}>
+                        <SelectTrigger className="h-8 text-xs bg-background"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {headers.map((h, i) => <SelectItem key={i} value={i.toString()}>{h || `Columna ${i+1}`}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Contacto</Label>
+                      <Select value={colMap.contact.toString()} onValueChange={(val) => setColMap(prev => ({...prev, contact: parseInt(val)}))}>
+                        <SelectTrigger className="h-8 text-xs bg-background"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {headers.map((h, i) => <SelectItem key={i} value={i.toString()}>{h || `Columna ${i+1}`}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Correo Electrónico *</Label>
+                      <Select value={colMap.email.toString()} onValueChange={(val) => setColMap(prev => ({...prev, email: parseInt(val)}))}>
+                        <SelectTrigger className="h-8 text-xs bg-background"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {headers.map((h, i) => <SelectItem key={i} value={i.toString()}>{h || `Columna ${i+1}`}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Asunto (Opcional)</Label>
+                      <Select value={colMap.subject.toString()} onValueChange={(val) => setColMap(prev => ({...prev, subject: parseInt(val)}))}>
+                        <SelectTrigger className="h-8 text-xs bg-background"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {headers.map((h, i) => <SelectItem key={i} value={i.toString()}>{h || `Columna ${i+1}`}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Cuerpo (Opcional)</Label>
+                      <Select value={colMap.body.toString()} onValueChange={(val) => setColMap(prev => ({...prev, body: parseInt(val)}))}>
+                        <SelectTrigger className="h-8 text-xs bg-background"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {headers.map((h, i) => <SelectItem key={i} value={i.toString()}>{h || `Columna ${i+1}`}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">CC (Opcional)</Label>
+                      <Select value={colMap.cc.toString()} onValueChange={(val) => setColMap(prev => ({...prev, cc: parseInt(val)}))}>
+                        <SelectTrigger className="h-8 text-xs bg-background"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {headers.map((h, i) => <SelectItem key={i} value={i.toString()}>{h || `Columna ${i+1}`}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-3 text-sm text-center border rounded bg-background text-muted-foreground">
+                    Carga un archivo Excel para poder configurar el mapeo de columnas.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Correos en Copia (CC) - Por Defecto */}
           <div className="space-y-2">
@@ -288,7 +402,7 @@ export const SurveyModal = ({ open, onClose, onSend, loading }: SurveyModalProps
             <Button variant="outline" className="flex-1 bg-transparent" onClick={handleClose} disabled={loading}>
               Cancelar
             </Button>
-            <Button className="flex-1" onClick={handleSend} disabled={!excelData || loading}>
+            <Button className="flex-1" onClick={handleSend} disabled={validRows.length === 0 || loading}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
