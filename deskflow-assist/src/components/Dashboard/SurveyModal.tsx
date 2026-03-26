@@ -47,7 +47,7 @@ export const SurveyModal = ({ open, onClose, onSend, loading }: SurveyModalProps
     return email.length > 0
   })
 
-  const [provider, setProvider] = useState("Office365KOS")
+  const [provider, setProvider] = useState("")
   const [defaultCC, setDefaultCC] = useState("")
   const [attachmentPath, setAttachmentPath] = useState("")
   const [defaultSubject, setDefaultSubject] = useState("Encuesta de Satisfacción - {clientName}")
@@ -153,6 +153,16 @@ export const SurveyModal = ({ open, onClose, onSend, loading }: SurveyModalProps
   }
 
   const handleSend = async () => {
+    if (!provider) {
+      toast({
+        title: "Proveedor requerido",
+        description: "Por favor selecciona un proveedor de correo en la configuración avanzada.",
+        variant: "destructive",
+      })
+      setShowConfig(true)
+      return
+    }
+
     if (validRows.length === 0) {
       toast({
         title: "Sin datos válidos",
